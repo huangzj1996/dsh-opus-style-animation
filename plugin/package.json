@@ -2,7 +2,7 @@
   "name": "dsh-style-cards",
   "version": "0.1.0",
   "private": true,
-  "description": "风格卡片启动器：DSH 左侧栏底部入口 + 浮层卡片墙（v1 只装本机 profile）",
+  "description": "Opus 片场（风格卡片启动器）：DSH 左侧栏底部入口 + 浮层卡片墙（v1 只装本机 profile）",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {

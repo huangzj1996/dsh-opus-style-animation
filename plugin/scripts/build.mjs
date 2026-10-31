@@ -33,6 +33,8 @@ function clientOptions(logLevel) {
     target: "es2022",
     external: ["react"],
     legalComments: "none",
+    // 页面按 UTF-8 跑；默认 ascii 会把中文转成 \\uXXXX，产物更大也更难读。
+    charset: "utf8",
     logLevel,
   };
 }

@@ -126,7 +126,7 @@ pnpm --dir plugin test        # 先构建，再 vitest run
 ## 7. 已知边界
 
 - 浮层在 `overlayLayer`（`z-index:20`）这个层叠上下文里，压不过宿主的 settings 全屏层（`z-index:1000`）；实际使用中碰不到。
-- `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「风格卡片」是写死的中文（v1 中文界面，符合规格）。
+- `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「Opus 片场」是写死的中文（v1 中文界面，符合规格）。
 - 图标没有可复用的宿主图标包（禁止 import `client-ui-primitives`），全部用内联 SVG。
 - 第三方 bundle 无法读到宿主页面 console，视觉回归只能靠人眼或将来加一条宿主路由做 beacon。
 - 浮层打开期间遮罩接管指针（点遮罩即关闭，验收判据要求）：会话本身不被重挂载、流式输出照常，关闭后原样继续；如果要求打开时也能点背后，就和「点遮罩关闭」冲突，需要先改判据。
