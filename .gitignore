@@ -3,7 +3,13 @@ node_modules/
 
 # 构建产物（plugin/lib 由 pnpm build 生成，不入库）
 plugin/lib/
+# 构建期生成的卡片目录与原文（由 plugin/scripts/generate-catalog.mjs 从随仓素材包生成，不入库）
+plugin/src/data/catalog.generated.ts
 
 # 一次性探针/研究工作区
 .tmp-*/
 .scratch/
+
+# 第三方素材包（仅本机保留作重建输入与夹具；对外分发内容已固化在 assets/）
+# B 档瘦身：删了 示例/ 的视频与截图、风格挑选.html；保留 风格提示词/ 与 示例 的 html/md
+code-animation-341-styles-main/
