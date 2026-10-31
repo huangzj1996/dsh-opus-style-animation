@@ -68,19 +68,19 @@ export function draftOutputDir(style: Pick<DraftStyle, "id" | "name">, now: Date
 }
 
 /**
- * 按块拼草稿：块内逐字保留，块与块之间只留一个空行。
+ * 按块拼草稿：**块内一个字符都不改**，块与块之间只留一个空行。
  * 原文块（prompt）通常以换行结尾，所以分隔符按前一块已有的换行数收口——
- * 既不改原文，也不在拼接处再叠出连续空行。
+ * 既不改原文，也不在拼接处再叠出连续空行。若原文自己以空行开头，那些换行是
+ * 源内容的一部分，照原样保留（宁可多一个空行，也不删原文的字）。
  */
 function joinBlocks(blocks: readonly string[]): string {
   let out = "";
-  for (const raw of blocks) {
+  for (const block of blocks) {
+    if (block === "") continue;
     if (out === "") {
-      out = raw;
+      out = block;
       continue;
     }
-    const block = raw.replace(/^\n+/, "");
-    if (block === "") continue;
     if (out.endsWith("\n\n")) out += block;
     else if (out.endsWith("\n")) out += "\n" + block;
     else out += "\n\n" + block;

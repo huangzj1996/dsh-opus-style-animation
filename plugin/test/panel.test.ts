@@ -154,4 +154,23 @@ describe("卡片详情与返回", () => {
     expect(applied).toEqual([]);
     expect(container.querySelector(".dsc-detail")).not.toBeNull();
   });
+
+  it("详情往返后折叠状态与滚动位置都保留", async () => {
+    const container = renderPanel(() => ({ ok: true }));
+    const body = container.querySelector(".dsc-body") as HTMLElement;
+
+    const agHead = container.querySelector('[data-series="AG"] .dsc-series-head') as HTMLButtonElement;
+    await click(agHead);
+    expect(agHead.getAttribute("aria-expanded")).toBe("false");
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(341 - 26);
+    body.scrollTop = 420;
+
+    await click(container.querySelector('[data-card-id="L4"]'));
+    await click(container.querySelector('[data-role="detail-back"]'));
+
+    const agHeadAgain = container.querySelector('[data-series="AG"] .dsc-series-head') as HTMLButtonElement;
+    expect(agHeadAgain.getAttribute("aria-expanded")).toBe("false");
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(341 - 26);
+    expect(body.scrollTop).toBe(420);
+  });
 });

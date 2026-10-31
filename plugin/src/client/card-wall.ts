@@ -7,7 +7,7 @@
  */
 import * as React from "react";
 import { readClock } from "../catalog/clock";
-import { groupStyles, styleLabel, toggleCollapsed } from "../catalog/groups";
+import { groupStyles, styleLabel } from "../catalog/groups";
 import type { SeriesGroup, StyleAsset } from "../catalog/types";
 import { ASSET_INDEX, ASSET_INDEX_PARSE_MS } from "../data/asset-index.generated";
 import { recordRenderBaseline, type RenderBaseline } from "./render-baseline";
@@ -89,6 +89,9 @@ const SeriesSection = React.memo(function SeriesSection(props: {
 export interface CardWallProps {
   /** 点任意一张卡：把这张风格资产交给详情视图。 */
   readonly onOpen: (style: StyleAsset) => void;
+  /** 折叠态由外层持有：进详情再返回时，卡片墙重挂载也不会把折叠状态丢掉。 */
+  readonly collapsed: ReadonlySet<string>;
+  readonly onToggle: (seriesKey: string) => void;
 }
 
 /** 卡片墙根组件。只在浮层打开、且没进详情时挂载。 */
@@ -96,7 +99,6 @@ export function CardWall(props: CardWallProps): React.ReactElement {
   // 基线从分组开始之前起算：341 张卡的分组 + 元素树 + 提交都算在「一次渲染」里。
   const [renderStartedAt] = React.useState(() => readClock());
   const groups = React.useMemo(() => groupStyles(ASSET_INDEX), []);
-  const [collapsed, setCollapsed] = React.useState<ReadonlySet<string>>(() => new Set());
   const [baseline, setBaseline] = React.useState<RenderBaseline | null>(null);
 
   // 首帧基线：两个 rAF 之后才回调，确保第一帧已经画完（单个 rAF 在绘制之前）。
@@ -132,10 +134,6 @@ export function CardWall(props: CardWallProps): React.ReactElement {
     };
   }, [renderStartedAt]);
 
-  const onToggle = React.useCallback((seriesKey: string) => {
-    setCollapsed((previous) => toggleCollapsed(previous, seriesKey));
-  }, []);
-
   const baselineText =
     baseline === null ? null : Math.max(1, Math.round(baseline.renderMs)) + " ms";
 
@@ -165,8 +163,8 @@ export function CardWall(props: CardWallProps): React.ReactElement {
       React.createElement(SeriesSection, {
         key: group.series.key,
         group,
-        collapsed: collapsed.has(group.series.key),
-        onToggle,
+        collapsed: props.collapsed.has(group.series.key),
+        onToggle: props.onToggle,
         onOpen: props.onOpen,
       }),
     ),

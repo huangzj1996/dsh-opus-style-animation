@@ -5,6 +5,7 @@
  * 草稿文本交给 composeDraft（纯函数），开新会话交给注入的 ApplyDraft 适配器。
  */
 import * as React from "react";
+import { toggleCollapsed } from "../catalog/groups";
 import type { StyleAsset } from "../catalog/types";
 import type { ApplyDraft } from "./apply-session";
 import { CardWall } from "./card-wall";
@@ -32,6 +33,11 @@ export function StyleCardsPanel(props: StyleCardsPanelProps): React.ReactElement
   const [selected, setSelected] = React.useState<StyleAsset | null>(null);
   const [theme, setTheme] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
+  // 折叠态放在详情这一层之上：进详情会卸载卡片墙，回到墙时折叠状态要与离开前一致。
+  const [collapsed, setCollapsed] = React.useState<ReadonlySet<string>>(() => new Set());
+  const toggleSeries = React.useCallback((seriesKey: string) => {
+    setCollapsed((previous) => toggleCollapsed(previous, seriesKey));
+  }, []);
 
   const openDetail = React.useCallback((style: StyleAsset) => {
     savedScrollTop.current = bodyRef.current?.scrollTop ?? 0;
@@ -69,7 +75,7 @@ export function StyleCardsPanel(props: StyleCardsPanelProps): React.ReactElement
     "div",
     { className: "dsc-body", ref: bodyRef },
     selected === null
-      ? React.createElement(CardWall, { onOpen: openDetail })
+      ? React.createElement(CardWall, { onOpen: openDetail, collapsed, onToggle: toggleSeries })
       : React.createElement(StyleDetail, {
           style: selected,
           theme,

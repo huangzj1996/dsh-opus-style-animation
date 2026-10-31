@@ -144,6 +144,11 @@ seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-d
   这样服务缺席时插件界面仍能打开，只有点「应用」时给可读错误）。拿到的服务调用
   `startSession(undefined, { prompt, clearPreviousDraft: true })`；宿主的异步失败（`draft.workspaceRequired` /
   `draft.initializationFailed`）由宿主自己弹 notice，适配器只兜「取服务失败 / 同步抛错」。
+  **已实测（2026-10-31）**：外部 bundle 能拿到该服务并成功调用——用户点「应用」后新建会话
+  `session-e78b5fc9-…` 落在当前工作区、session 日志 0 turn（未自动发送），证据记在票 #22。
+- **应用失败面**：`startSession` 是 fire-and-forget（返回 void），异步创建失败时它自己弹宿主 notice，
+  插件侧无法读到该 notice；所以「已带入草稿」轻提示表示调用已发出，不保证宿主异步成功。工作区不可用、
+  草稿初始化失败时用户会同时看到宿主的失败 notice（#25 会在此基础上补重试/错误面）。
 - `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「Opus 片场」是写死的中文（v1 中文界面，符合规格）。
 - 图标没有可复用的宿主图标包（禁止 import `client-ui-primitives`），全部用内联 SVG。
 - 卡片墙的系列占位色是**内容色**（10 个系列各一档，写在 `styles.ts` 的 `.dsc-card[data-series=…]` 里），

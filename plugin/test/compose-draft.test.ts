@@ -84,4 +84,32 @@ describe("composeDraft", () => {
     expect(draft).toContain("\n主题：新年 倒计时\n");
     expect(draft).toContain(h10.prompt);
   });
+
+  it("完整 golden：一句话风格、空主题时就是「任务说明 + 空行 + 原文」", () => {
+    const h10 = byId("H10");
+    const draft = composeDraft(h10, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+    expect(draft).toBe(
+      "按下面的风格提示词做一段代码动画，产物写到 animations/20261031-131500-H10-Creative-Mode/index.html。" +
+        "\n\n" +
+        h10.prompt,
+    );
+  });
+
+  it("原文块逐字保留：即使原文以空行开头也不删字", () => {
+    const fixture = {
+      id: "X1",
+      name: "测试",
+      prompt: "\n\n\n# X1 测试\n\n## 风格提示词\n\n正文\n",
+      hasSharedHelpers: false,
+    };
+    const draft = composeDraft(fixture, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+    expect(draft).toContain(fixture.prompt);
+    expect(draft.endsWith(fixture.prompt)).toBe(true);
+  });
+
+  it("空卡（原文以多个换行结尾）也不被修剪", () => {
+    const m14 = byId("M14");
+    const draft = composeDraft(m14, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+    expect(draft.endsWith(m14.prompt)).toBe(true);
+  });
 });

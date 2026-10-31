@@ -3,7 +3,7 @@ import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { compareStyleIds } from "../src/catalog/groups";
+import { compareStyleIds, toggleCollapsed } from "../src/catalog/groups";
 import { ASSET_INDEX } from "../src/data/asset-index.generated";
 import { CardWall } from "../src/client/card-wall";
 
@@ -14,6 +14,16 @@ import { CardWall } from "../src/client/card-wall";
 const containers: HTMLElement[] = [];
 const roots: Root[] = [];
 
+/** 折叠态现在由外层持有；测试用同一套受控状态复现真实调用方的用法。 */
+function WallHarness(): React.ReactElement {
+  const [collapsed, setCollapsed] = React.useState<ReadonlySet<string>>(() => new Set());
+  return React.createElement(CardWall, {
+    onOpen: () => undefined,
+    collapsed,
+    onToggle: (seriesKey: string) => setCollapsed((previous) => toggleCollapsed(previous, seriesKey)),
+  });
+}
+
 async function renderWall(): Promise<HTMLElement> {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -22,7 +32,7 @@ async function renderWall(): Promise<HTMLElement> {
   roots.push(root);
   const startedAt = performance.now();
   await act(async () => {
-    root.render(React.createElement(CardWall, { onOpen: () => undefined }));
+    root.render(React.createElement(WallHarness));
   });
   const elapsed = performance.now() - startedAt;
   // 基线只打印不断言（jsdom 无布局/绘制，远低于真浏览器；数字记进票里做参考）。
