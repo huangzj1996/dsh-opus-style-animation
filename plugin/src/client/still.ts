@@ -24,7 +24,7 @@ export function StillImage(props: StillImageProps): React.ReactElement {
   const fallback = props.fallback === undefined ? "id" : props.fallback;
   return React.createElement(
     "span",
-    { className: props.className, "data-still": showImage ? "image" : "fallback" },
+    { className: props.className, "data-still": showImage ? "image" : "fallback", "data-role": "still-slot" },
     showImage
       ? React.createElement("img", {
           className: "dsc-still-img",
@@ -36,6 +36,10 @@ export function StillImage(props: StillImageProps): React.ReactElement {
         })
       : fallback === null
         ? null
-        : React.createElement("span", { className: "dsc-still-fallback", "aria-hidden": "true" }, props.style.id),
+        : React.createElement(
+            "span",
+            { className: "dsc-still-fallback", "data-role": "still-fallback", "aria-hidden": "true" },
+            props.style.id,
+          ),
   );
 }

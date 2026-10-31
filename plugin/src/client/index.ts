@@ -4,7 +4,8 @@
  * 座位与契约：
  *   1. 左侧栏底部（sidebar.footer.action）一行「Opus 片场」；
  *   2. 整帧浮层（shell.overlay）里一个遮罩 + 面板：点遮罩、按 ESC、点关闭按钮都能关；
- *   3. #22 起，面板里点卡片进详情，点「应用」调用 uiWorkspace.startSession 打开新会话并预填草稿。
+ *   3. 面板里点卡片进详情，点「应用」调用 uiWorkspace.openWorkspace 打开新会话并预填草稿（#25 起
+ *      改走 beforeOpen 钩子：能拿到「空白会话已有草稿」，也能把宿主失败变成可读错误）。
  *
  * 宿主契约要点（见 docs/dev/plugin.md）：
  * - 构建后是 classic script，自己调用 window.__ModuleLoader__.load 注册 CJS 工厂；
@@ -148,7 +149,7 @@ export function apply(ctx: PluginContext): void {
 
   const store = createOverlayStore();
   // 应用适配器：每次点击时才去取服务，拿不到就返回可读错误（不抛、不吞）。
-  const startSession = createDraftApplier(() => ctx.get?.("uiWorkspace"));
+  const applyDraft = createDraftApplier((name) => ctx.get?.(name));
 
   /** 左侧栏底部的一行。宿主只把列状态作为 wide 传进来：收起成图标栏时只画图标。 */
   function StyleCardsEntry(props: { wide?: boolean }): React.ReactElement {
@@ -280,7 +281,7 @@ export function apply(ctx: PluginContext): void {
                 ),
               ),
               React.createElement(StyleCardsPanel, {
-                starter: startSession,
+                starter: applyDraft,
                 onApplied: handleApplied,
                 sharedHelpers: SHARED_HELPERS,
               }),

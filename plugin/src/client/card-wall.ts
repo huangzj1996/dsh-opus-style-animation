@@ -150,6 +150,19 @@ function FilterBar(props: {
   );
 }
 
+/**
+ * 空态：搜索/筛选没有命中时，卡片墙内容区里唯一的那一块状态。
+ * 与卡片自己的缩略图占位一样，都只占「内容区」这一个位置——两者不会同时出现、也不会互相盖住。
+ */
+function WallEmptyState(): React.ReactElement {
+  return React.createElement(
+    "div",
+    { className: "dsc-wall-empty", "data-role": "empty-state", role: "status" },
+    React.createElement("p", { className: "dsc-wall-empty-title" }, "没有匹配的风格"),
+    React.createElement("p", { className: "dsc-wall-empty-hint" }, "换个关键词，或点「全部」清空系列筛选。"),
+  );
+}
+
 /** 卡片墙根组件。只在浮层打开、且没进详情时挂载。 */
 export function CardWall(props: CardWallProps): React.ReactElement {
   // 基线从分组开始之前起算：341 张卡的分组 + 元素树 + 提交都算在「一次渲染」里。
@@ -220,16 +233,7 @@ export function CardWall(props: CardWallProps): React.ReactElement {
     ),
     React.createElement(FilterBar, { filter: props.filter, onFilterChange: props.onFilterChange }),
     visible.length === 0
-      ? React.createElement(
-          "div",
-          { className: "dsc-wall-empty", "data-role": "empty-state" },
-          React.createElement("p", { className: "dsc-wall-empty-title" }, "没有匹配的风格"),
-          React.createElement(
-            "p",
-            { className: "dsc-wall-empty-hint" },
-            "换个关键词，或点「全部」清空系列筛选。",
-          ),
-        )
+      ? React.createElement(WallEmptyState)
       : searching
         ? // 有关键词时平铺成相关度列表：BM25 的全局顺序不能被系列分组打散。
           React.createElement(

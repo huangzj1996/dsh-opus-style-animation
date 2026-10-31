@@ -48,10 +48,12 @@ describe("StillImage", () => {
     expect(img?.getAttribute("alt")).toBe("");
   });
 
-  it("无静帧：没有 img，退化为系列色块上的 ID", () => {
+  it("无静帧：没有 img，退化为系列色块上的 ID（占位落在媒体槽里）", () => {
     const container = render(React.createElement(StillImage, { style: byId("K12"), className: "dsc-card-thumb" }));
     expect(container.querySelector("img")).toBeNull();
-    expect(container.querySelector(".dsc-still-fallback")?.textContent).toBe("K12");
+    const slot = container.querySelector('[data-role="still-slot"]');
+    expect(slot?.getAttribute("data-still")).toBe("fallback");
+    expect(slot?.querySelector('[data-role="still-fallback"]')?.textContent).toBe("K12");
   });
 
   it("加载失败：只把这一张退化为占位，不影响其它卡", () => {
@@ -70,38 +72,39 @@ describe("StillImage", () => {
     });
     expect(container.querySelectorAll("img")).toHaveLength(1);
     expect(container.querySelector("img")?.getAttribute("src")).toContain("stills/L4.jpg");
-    expect(container.querySelector(".dsc-still-fallback")?.textContent).toBe("A1");
+    // 与「无静帧」同一个占位位置：媒体槽 + ID。
+    const failed = container.querySelector('[data-still="fallback"]');
+    expect(failed?.getAttribute("data-role")).toBe("still-slot");
+    expect(failed?.querySelector('[data-role="still-fallback"]')?.textContent).toBe("A1");
   });
 });
 
 describe("详情大图", () => {
-  it("与卡片缩略图同一个 URL 来源", () => {
-    const container = render(
+  const renderDetail = (id: string): HTMLElement =>
+    render(
       React.createElement(StyleDetail, {
-        style: byId("A1"),
+        style: byId(id),
         theme: "",
         error: null,
+        applying: false,
+        confirmDraft: false,
         onThemeChange: () => undefined,
         onApply: () => undefined,
+        onConfirmApply: () => undefined,
+        onCancelApply: () => undefined,
         onBack: () => undefined,
       }),
     );
+
+  it("与卡片缩略图同一个 URL 来源", () => {
+    const container = renderDetail("A1");
     const image = container.querySelector('[data-role="detail-still"] img');
     expect(image?.getAttribute("src")).toBe("style-cards/stills/A1.jpg?v=" + ASSET_INDEX_SHA256.slice(0, 12));
     expect(image?.getAttribute("loading")).toBe("lazy");
   });
 
   it("无静帧的卡片详情里没有大图", () => {
-    const container = render(
-      React.createElement(StyleDetail, {
-        style: byId("K12"),
-        theme: "",
-        error: null,
-        onThemeChange: () => undefined,
-        onApply: () => undefined,
-        onBack: () => undefined,
-      }),
-    );
+    const container = renderDetail("K12");
     expect(container.querySelector('[data-role="detail-still"]')).toBeNull();
   });
 });

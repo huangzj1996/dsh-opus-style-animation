@@ -88,7 +88,7 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
   `catalog-data.test.ts` 断言 341 张、10 组、193 张带静帧、许可分档，并把 341 份内置原文与 `assets/styles/*.md`
   **逐字节**对比；`card-wall.test.ts` 在 jsdom 里渲染出 341 张卡并验证折叠。
 
-## 详情与应用（#22）
+## 详情与应用（#22、#25）
 
 - **详情**：点任意卡片进入。显示名称、三档许可署名（徽标 + 版权人 + 一句话条款 + 逐条来源）、
   assets/index.json 里 prompt 的**全文**（只读、逐字）、可选「主题」输入与「应用」按钮；
@@ -98,14 +98,24 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
   _公共函数.js 全文，保证参考实现里的 rng / clamp / vgrad 可直接跑。内联时会把原文里
   「公共的小工具函数在同一文件夹的 _公共函数.js 里。」那句删掉（新会话里它已是错的），
   改由草稿说明「公共函数已添加在下方」（用户 2026-10-31 冒烟后拍板）。块之间只留一个空行。
-- **应用**：uiWorkspace.startSession(undefined, { prompt, clearPreviousDraft: true })——在当前/最近工作区
-  开新会话并把草稿填进输入框，**不自动发送**；成功后浮层关闭并出现轻提示「已带入草稿，可编辑后发送」。
-  拿不到服务或同步失败时，详情里显示可读错误、浮层保持打开（不吞错）。
+- **9 张空卡（#25）**：原文只有表格元数据、`## 风格提示词` 一节是空的（K22 只有 5 个字），照抄进草稿
+  会在末尾留下空段落与连续空行。草稿因此只给「任务说明（带卡片 ID 与名称）+ 主题」，不在空卡上
+  内联公共函数；详情页仍展示原文全文。
+- **应用（#25 起）**：先解析当前/最近工作区，再用 `uiWorkspace.openWorkspace(workspaceId, beforeOpen)`
+  打开新会话，在 beforeOpen 里用 `conversation.input.requestDraftInitialization(binding, options)`
+  预填草稿，**不自动发送**；成功后浮层关闭并出现轻提示「已带入草稿，可编辑后发送」。
+  - **空白会话已有草稿**（拍板：先确认再覆盖）：第一次用 `whenDraftExists: "keep"` 探测——宿主回
+    preserved 说明那份草稿还在，就中止本次打开（会话不切走），详情里出现「覆盖并应用 / 取消」确认条；
+    用户确认后再以 `"replace"` 走一次。不静默覆盖、不丢用户已输入的字。
+  - **失败面**：`openWorkspace` 的 Promise 在创建失败或 beforeOpen 抛错时 reject，详情里显示可读错误、
+    浮层保持打开，原地点「应用」即可重试（重试成功才关浮层 + 轻提示）。
+  - **降级**：sessions / workspaces / conversation 三个服务面读不到时，退回 #22 验证过的
+    `startSession(undefined, { prompt, whenDraftExists: "append" })`：空白草稿为空时等价于覆盖，
+    非空时追加、绝不静默丢字；这一路拿不到失败/冲突面（宿主自己弹 notice）。
 - **外部 bundle 的 uiWorkspace 注入**：客户端插件上下文用 ctx.get('uiWorkspace') 做可选查找；
-  2026-10-31 真机实测通过：用户点「应用」后新会话 `session-e78b5fc9-…` 落在当前工作区、session 日志
-  0 turn（草稿未自动发送），证据记在票 #22。
-- **失败面**：startSession 是 fire-and-forget，异步失败由宿主自己弹 notice；插件侧只兜取服务失败 /
-  同步抛错（会显示在详情里、浮层不关）。失败重试与更细的错误面留给 #25。
+  2026-10-31 真机实测通过（#22）：用户点「应用」后新会话 `session-e78b5fc9-…` 落在当前工作区、
+  session 日志 0 turn（草稿未自动发送）。#25 的 sessions / workspaces / conversation 访问与
+  草稿覆盖确认路径待同一次真机冒烟复核。
 
 ## 缩略图与缺图占位（#24）
 
@@ -155,20 +165,24 @@ curl.exe -sS --path-as-is -o NUL -w '%{http_code}\n' 'http://127.0.0.1:51188/sty
 
 ## 测试
 
-`plugin/test/` 十五个文件、90 条（#24 后）：
+`plugin/test/` 十五个文件、104 条（#25 后）：
 
 - `asset-index.test.ts` — 四类真实样本的索引读取（A1 代码样片、L4 11 节英文规约、H10 一句话、M14 空卡）；
 - `catalog-data.test.ts` — 与 `assets/index.json` 完全一致、341 张 / 10 系列 / 193 张带静帧 / 9 张空卡、字段与许可分档，以及 341 份内置原文与
   `assets/styles/*.md` 逐字节对比；
-- `card-wall.test.ts` — jsdom 里渲染 341 张卡、默认展开、10 个组头可折叠、组内数值序、空卡兜底文案、首帧基线写进 window；
+- `card-wall.test.ts` — jsdom 里渲染 341 张卡、默认展开、10 个组头可折叠、组内数值序、空卡兜底文案、首帧基线写进 window、
+  搜索/筛选、空态与缩略图占位各自只占内容区一个位置；
 - `render-baseline.test.ts` — 首帧基线的记录点；
 - `overlay-state.test.ts` — 浮层开/关状态机（入口点按切换、关闭按钮 / 点遮罩 / ESC 关闭、关着时 ESC 无事发生、关掉还能再开）；
 - `client-bundle.test.ts` — 构建产物方言、`apply` 模拟宿主上下文、内置数据与「不读盘 / 不联网」；
 - `package-manifest.test.ts` — `dsh.bundle.patch` / `dsh.client` / 展示元数据 / 图标齐全；
-- `compose-draft.test.ts` — 草稿文本 golden：空/有主题、路径形状、原文逐字、代码样片内联公共函数并删掉「同一文件夹」那句、块间只留一个空行；
+- `compose-draft.test.ts` — 草稿文本 golden：空/有主题、路径形状、原文逐字、代码样片内联公共函数并删掉「同一文件夹」那句、
+  块间只留一个空行、9 张空卡只有任务说明与主题（全量 341 张无三连换行）；
 - `attribution.test.ts` — 三档许可署名（free-share-no-sell © 俯仰观照；MIT 的 L/V/X 各自版权人；逐条来源）；
-- `apply-session.test.ts` — 适配器断言 startSession(undefined, { prompt, clearPreviousDraft: true })，失败返回可读错误；
-- `panel.test.ts` — jsdom：点卡片进详情、返回恢复滚动位置、应用草稿含主题/公共函数、失败时错误留在详情里；
+- `apply-session.test.ts` — 适配器：openWorkspace + beforeOpen 用 keep 探测草稿、preserved → draft-exists、
+  确认后 replace、宿主拒绝/SessionCreateError/workspace 缺失 → 可读错误、服务缺席 → 退回 startSession(append)；
+- `panel.test.ts` — jsdom：点卡片进详情、返回恢复滚动位置、应用草稿含主题/公共函数、空卡应用、
+  失败时错误留在详情里且重试成功、草稿冲突先确认再覆盖、在途禁用防重复提交；
 - `search.test.ts` — 二元组粗筛 + BM25 的纯函数用例（#23）；
 - `stills-route.test.ts` — 宿主 prefix 路由：解析（含编码/反斜杠/空字节穿越）与真实 HTTP（200 / 404 / 405 / HEAD / 长缓存）；
 - `still-url.test.ts` — 纯函数：stillPath → 同源 URL、hasStill（node 环境）；

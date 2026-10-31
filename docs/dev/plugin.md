@@ -144,22 +144,30 @@ pnpm --dir plugin test        # 先构建（含生成数据），再 vitest run
 seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-data.test.ts` 全量逐字节 + 公共函数逐字）、
 卡片墙（含搜索 / 系列筛选）与详情 DOM（`test/card-wall.test.ts`、`test/panel.test.ts`，jsdom）、检索打分（`test/search.test.ts`，纯函数）、首帧基线（`test/render-baseline.test.ts`）、
 纯状态机与浮层还原（`test/overlay-state.test.ts`）、草稿装配（`test/compose-draft.test.ts`）、
-许可署名（`test/attribution.test.ts`）、会话适配器（`test/apply-session.test.ts`）、
+许可署名（`test/attribution.test.ts`）、会话适配器（`test/apply-session.test.ts`：openWorkspace + beforeOpen
+预填草稿、草稿冲突、失败与降级路径）、
 资产路由（宿主，`test/stills-route.test.ts`：解析 + 真实 HTTP）、缩略图 DOM（`test/still.test.ts`，jsdom）、
 构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、包清单（`test/package-manifest.test.ts`）。
 
 ## 7. 已知边界
 
 - 浮层在 `overlayLayer`（`z-index:20`）这个层叠上下文里，压不过宿主的 settings 全屏层（`z-index:1000`）；实际使用中碰不到。
-- **uiWorkspace 取法**：外部 bundle 的客户端上下文用 `ctx.get('uiWorkspace')` 做可选查找（不写进 `inject`，
-  这样服务缺席时插件界面仍能打开，只有点「应用」时给可读错误）。拿到的服务调用
-  `startSession(undefined, { prompt, clearPreviousDraft: true })`；宿主的异步失败（`draft.workspaceRequired` /
-  `draft.initializationFailed`）由宿主自己弹 notice，适配器只兜「取服务失败 / 同步抛错」。
-  **已实测（2026-10-31）**：外部 bundle 能拿到该服务并成功调用——用户点「应用」后新建会话
-  `session-e78b5fc9-…` 落在当前工作区、session 日志 0 turn（未自动发送），证据记在票 #22。
-- **应用失败面**：`startSession` 是 fire-and-forget（返回 void），异步创建失败时它自己弹宿主 notice，
-  插件侧无法读到该 notice；所以「已带入草稿」轻提示表示调用已发出，不保证宿主异步成功。工作区不可用、
-  草稿初始化失败时用户会同时看到宿主的失败 notice（#25 会在此基础上补重试/错误面）。
+- **服务取法**：外部 bundle 的客户端上下文用 `ctx.get(name)` 做可选查找（不写进 `inject`，这样服务缺席时
+  插件界面仍能打开，只有点「应用」时给可读错误）。#22 已实测 `uiWorkspace` 可见；#25 起应用链路还要
+   `sessions`（读当前主视图会话：`list.getSnapshot().byId[*].retainedBy.mainView`）、`workspaces`
+  （读工作区与会话归属）与 `conversation`（`input.requestDraftInitialization`）。
+- **应用链路（#25 起）**：`uiWorkspace.openWorkspace(workspaceId, beforeOpen)` + 在 beforeOpen 里
+  `conversation.input.requestDraftInitialization(binding, { prompt, whenDraftExists })`。
+  openWorkspace 的 Promise 会因创建失败或 beforeOpen 抛错而 reject，所以失败能回到详情里；
+  `keep` 返回 `preserved` 时抛错中止本次打开 → 详情出现「覆盖并应用 / 取消」确认，确认后以 `replace` 重走。
+  工作区解析复刻宿主 startSession：当前主视图会话所属工作区，否则最近更新的工作区。
+- **降级路径**：`sessions` / `workspaces` / `conversation` 读不到时退回 #22 的
+  `startSession(undefined, { prompt, whenDraftExists: "append" })`——空草稿时等价覆盖、非空时追加，
+  不静默丢字；这一路拿不到失败/冲突面（宿主自己弹 notice）。
+- **待冒烟**：#25 的 `sessions` / `workspaces` / `conversation` 可见性与 beforeOpen 预填草稿路径
+  尚无真机取证（此前只实证过 uiWorkspace + startSession）。冒烟判据：应用空卡/普通卡都能落到新会话草稿；
+  空白会话先手输一段字再应用 → 出现覆盖确认、取消后字还在、确认后草稿被替换；断开/无工作区时错误留在详情里、
+  再点应用可成功。
 - `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「Opus 片场」是写死的中文（v1 中文界面，符合规格）。
 - 图标没有可复用的宿主图标包（禁止 import `client-ui-primitives`），全部用内联 SVG。
 - 卡片墙的系列占位色是**内容色**（10 个系列各一档，写在 `styles.ts` 的 `.dsc-card[data-series=…]` 里），

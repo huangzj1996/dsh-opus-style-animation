@@ -101,15 +101,48 @@ describe("composeDraft", () => {
       name: "测试",
       prompt: "\n\n\n# X1 测试\n\n## 风格提示词\n\n正文\n",
       hasSharedHelpers: false,
+      payloadKind: "short" as const,
     };
     const draft = composeDraft(fixture, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
     expect(draft).toContain(fixture.prompt);
     expect(draft.endsWith(fixture.prompt)).toBe(true);
   });
 
-  it("空卡（原文以多个换行结尾）也不被修剪", () => {
+  it("空卡（payloadKind = empty）：草稿只有任务说明与主题，不带空的原文段落", () => {
     const m14 = byId("M14");
-    const draft = composeDraft(m14, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
-    expect(draft.endsWith(m14.prompt)).toBe(true);
+    const draft = composeDraft(m14, "新年倒计时", { sharedHelpers: SHARED_HELPERS, now: NOW });
+    expect(draft).toContain("animations/20261031-131500-M14-未命名/index.html");
+    expect(draft).toContain("主题：新年倒计时");
+    expect(draft).toContain("M14");
+    expect(draft).not.toContain("## 风格提示词");
+    expect(draft).not.toContain("_公共函数.js");
+    expect(draft.match(/\n{3,}/g) ?? []).toEqual([]);
+    expect(draft.endsWith("\n")).toBe(false);
+  });
+
+  it("9 张空卡：都不出现空的原文段落、不留连续空行；无主题时只剩任务说明", () => {
+    const empties = ASSET_INDEX.styles.filter((style) => style.payloadKind === "empty");
+    expect(empties).toHaveLength(9);
+    for (const style of empties) {
+      const draft = composeDraft(style, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+      expect(draft).toContain("animations/20261031-131500-" + style.id + "-");
+      expect(draft).not.toContain(style.prompt);
+      expect(draft.match(/\n{3,}/g) ?? []).toEqual([]);
+      expect(draft.endsWith("\n")).toBe(false);
+    }
+  });
+
+  it("K22 这类空卡把名称写进任务说明", () => {
+    const k22 = byId("K22");
+    const draft = composeDraft(k22, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+    expect(draft).toContain("K22");
+    expect(draft).toContain("折纸");
+  });
+
+  it("全量 341 张：草稿都不出现三个连续换行", () => {
+    for (const style of ASSET_INDEX.styles) {
+      const draft = composeDraft(style, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+      expect(draft.match(/\n{3,}/g) ?? []).toEqual([]);
+    }
   });
 });

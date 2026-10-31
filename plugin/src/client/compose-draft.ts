@@ -17,7 +17,7 @@
 import type { StyleAsset } from "../catalog/types";
 
 /** 只依赖参与草稿的那几个字段，测试可以用更小的夹具。 */
-export type DraftStyle = Pick<StyleAsset, "id" | "name" | "prompt" | "hasSharedHelpers">;
+export type DraftStyle = Pick<StyleAsset, "id" | "name" | "prompt" | "hasSharedHelpers" | "payloadKind">;
 
 export interface ComposeDraftOptions {
   /** _公共函数.js 全文（逐字）。 */
@@ -88,20 +88,47 @@ function joinBlocks(blocks: readonly string[]): string {
   return out;
 }
 
+/** 原文里没有可用的风格提示词（索引 payloadKind = empty；9 张）。 */
+function isEmptyPayload(style: DraftStyle): boolean {
+  return style.payloadKind === "empty";
+}
+
+/**
+ * 空卡的任务说明。空卡原文只有表格元数据、`## 风格提示词` 一节是空的（K22 只有 5 个字），
+ * 照抄进草稿只会在末尾留下空段落与连续空行；用户要的是「点得下去」——草稿只给任务说明与主题，
+ * 名称在说明里带上（K22「折纸」），其余交给会话里的 agent 与主题自由发挥。
+ */
+function emptyTaskLine(style: DraftStyle, now: Date): string {
+  const name = style.name.trim();
+  return (
+    "用卡片 " +
+    style.id +
+    (name === "" ? "" : "「" + name + "」") +
+    " 做一段代码动画（这张卡没有风格原文，按主题自由发挥），产物写到 " +
+    draftOutputDir(style, now) +
+    "index.html。"
+  );
+}
+
 /** 生成草稿全文（见文件头）。 */
 export function composeDraft(style: DraftStyle, theme: string, options: ComposeDraftOptions): string {
   const themeLine = theme.replace(/\s+/g, " ").trim();
+  const empty = isEmptyPayload(style);
   const blocks: string[] = [
-    "按下面的风格提示词做一段代码动画，产物写到 " + draftOutputDir(style, options.now) + "index.html。",
+    empty
+      ? emptyTaskLine(style, options.now)
+      : "按下面的风格提示词做一段代码动画，产物写到 " + draftOutputDir(style, options.now) + "index.html。",
   ];
   if (themeLine !== "") blocks.push("主题：" + themeLine);
-  const inlineHelpers = style.hasSharedHelpers && options.sharedHelpers !== "";
-  blocks.push(inlineHelpers ? stripSharedHelpersSentence(style.prompt) : style.prompt);
-  if (inlineHelpers) {
-    blocks.push(
-      "公共函数已添加在下方（_公共函数.js 全文，rng / clamp / vgrad 等都在里面）；请把它与 index.html 放在同一目录：",
-    );
-    blocks.push(options.sharedHelpers);
+  if (!empty) {
+    const inlineHelpers = style.hasSharedHelpers && options.sharedHelpers !== "";
+    blocks.push(inlineHelpers ? stripSharedHelpersSentence(style.prompt) : style.prompt);
+    if (inlineHelpers) {
+      blocks.push(
+        "公共函数已添加在下方（_公共函数.js 全文，rng / clamp / vgrad 等都在里面）；请把它与 index.html 放在同一目录：",
+      );
+      blocks.push(options.sharedHelpers);
+    }
   }
   return joinBlocks(blocks);
 }

@@ -133,12 +133,16 @@ describe("内置资产索引", () => {
   });
 });
 
-describe("#22 应用链路（详情 + 新会话草稿）", () => {
-  it("bundle 里带着 uiWorkspace 适配器、startSession 参数与公共函数全文", () => {
+describe("#25 应用链路（详情 + 新会话草稿 + 边界兜底）", () => {
+  it("bundle 里带着 openWorkspace + 预填草稿的路径、失败/冲突面与公共函数全文", () => {
     const code = readFileSync(bundlePath, "utf8");
     expect(code).toContain("uiWorkspace");
+    expect(code).toContain("openWorkspace");
+    expect(code).toContain("requestDraftInitialization");
+    expect(code).toContain("whenDraftExists");
     expect(code).toContain("startSession");
-    expect(code).toContain("clearPreviousDraft");
+    expect(code).toContain("draft-confirm");
+    expect(code).toContain("没有风格原文");
     expect(code).toContain("已带入草稿，可编辑后发送");
     expect(code).toContain("function rng(seed)");
     expect(code).toContain("_公共函数.js");

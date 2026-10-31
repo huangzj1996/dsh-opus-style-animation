@@ -484,6 +484,68 @@ export const STYLE_CARDS_CSS = `
 .dsc-apply:hover {
   background: var(--dsw-alias-button-primary-hover, #1d4ed8);
 }
+.dsc-apply:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* 空白会话已有草稿：先确认再覆盖（#25）。 */
+.dsc-draft-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.35));
+  border-radius: var(--dsw-radius-md, 8px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.04));
+}
+.dsc-draft-confirm-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 19px;
+}
+.dsc-draft-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dsc-confirm-cancel,
+.dsc-confirm-overwrite {
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: var(--dsw-radius-md, 8px);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 19px;
+  cursor: pointer;
+}
+.dsc-confirm-cancel {
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.35));
+  background: 0 0;
+  color: inherit;
+}
+.dsc-confirm-cancel:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+}
+.dsc-confirm-overwrite {
+  border: none;
+  background: var(--dsw-alias-button-primary-fill, #2563eb);
+  color: var(--dsw-alias-label-primary-foreground, #ffffff);
+  font-weight: 600;
+}
+.dsc-confirm-overwrite:hover {
+  background: var(--dsw-alias-button-primary-hover, #1d4ed8);
+}
+.dsc-confirm-cancel:focus-visible,
+.dsc-confirm-overwrite:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+.dsc-confirm-cancel:disabled,
+.dsc-confirm-overwrite:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 
 .dsc-hint {
   position: fixed;

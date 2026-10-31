@@ -193,6 +193,29 @@ describe("搜索与系列筛选", () => {
     expect(container.querySelector('[data-role="empty-state"]')?.textContent).toContain("没有匹配");
   });
 
+  it("空态与缩略图占位各自只占内容区的一个位置，互不覆盖", async () => {
+    const container = await renderWall();
+
+    // 1) 加载失败：只把这张卡的媒体槽换成占位，墙面不会出现空态。
+    const a1Slot = container.querySelector('[data-card-id="A1"] [data-role="still-slot"]');
+    expect(a1Slot?.getAttribute("data-still")).toBe("image");
+    act(() => {
+      a1Slot?.querySelector("img")?.dispatchEvent(new Event("error"));
+    });
+    const failedSlot = container.querySelector('[data-card-id="A1"] [data-role="still-slot"]');
+    expect(failedSlot?.getAttribute("data-still")).toBe("fallback");
+    expect(failedSlot?.querySelector('[data-role="still-fallback"]')?.textContent).toBe("A1");
+    expect(container.querySelectorAll('[data-role="empty-state"]')).toHaveLength(0);
+
+    // 2) 搜索无结果：内容区只留空态，卡片与媒体槽全部退场。
+    const input = container.querySelector<HTMLInputElement>('[data-role="search-input"]')!;
+    await typeInto(input, "zzzz不存在");
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(0);
+    expect(container.querySelectorAll('[data-role="still-slot"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-role="empty-state"]')).toHaveLength(1);
+    expect(container.querySelector(".dsc-wall [data-role='empty-state']")).not.toBeNull();
+  });
+
   it("有关键词时平铺成相关度列表：DOM 顺序就是 BM25 顺序，清空后恢复系列分组", async () => {
     const container = await renderWall();
     const input = container.querySelector<HTMLInputElement>('[data-role="search-input"]')!;
