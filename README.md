@@ -114,8 +114,8 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
     非空时追加、绝不静默丢字；这一路拿不到失败/冲突面（宿主自己弹 notice）。
 - **外部 bundle 的 uiWorkspace 注入**：客户端插件上下文用 ctx.get('uiWorkspace') 做可选查找；
   2026-10-31 真机实测通过（#22）：用户点「应用」后新会话 `session-e78b5fc9-…` 落在当前工作区、
-  session 日志 0 turn（草稿未自动发送）。#25 的 sessions / workspaces / conversation 访问与
-  草稿覆盖确认路径待同一次真机冒烟复核。
+  session 日志 0 turn（草稿未自动发送）。#25 的 sessions / workspaces / conversation 访问、
+  beforeOpen 预填草稿与草稿覆盖确认也已由 #25 真机冒烟复核通过（覆盖确认 / 取消 / 覆盖后替换、空卡应用）。
 
 ## 缩略图与缺图占位（#24）
 

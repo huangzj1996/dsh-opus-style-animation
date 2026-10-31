@@ -164,10 +164,10 @@ seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-d
 - **降级路径**：`sessions` / `workspaces` / `conversation` 读不到时退回 #22 的
   `startSession(undefined, { prompt, whenDraftExists: "append" })`——空草稿时等价覆盖、非空时追加，
   不静默丢字；这一路拿不到失败/冲突面（宿主自己弹 notice）。
-- **待冒烟**：#25 的 `sessions` / `workspaces` / `conversation` 可见性与 beforeOpen 预填草稿路径
-  尚无真机取证（此前只实证过 uiWorkspace + startSession）。冒烟判据：应用空卡/普通卡都能落到新会话草稿；
-  空白会话先手输一段字再应用 → 出现覆盖确认、取消后字还在、确认后草稿被替换；断开/无工作区时错误留在详情里、
-  再点应用可成功。
+- **已真机冒烟（2026-10-31，#25）**：`sessions` / `workspaces` / `conversation` 在外部 bundle 可见，
+  beforeOpen 预填草稿生效。冒烟结果：空白会话先手输一段字再应用 → 出现「覆盖并应用 / 取消」确认，
+  取消后原字还在、确认后草稿被替换；普通卡与空卡（M14）都落到新会话草稿（空卡只有任务说明 + 主题）；
+  入口、卡片墙、搜索、缩略图照常。
 - `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「Opus 片场」是写死的中文（v1 中文界面，符合规格）。
 - 图标没有可复用的宿主图标包（禁止 import `client-ui-primitives`），全部用内联 SVG。
 - 卡片墙的系列占位色是**内容色**（10 个系列各一档，写在 `styles.ts` 的 `.dsc-card[data-series=…]` 里），
