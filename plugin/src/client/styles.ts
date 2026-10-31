@@ -130,4 +130,139 @@ export const STYLE_CARDS_CSS = `
   font-size: 13px;
   line-height: 1.7;
 }
+
+/* —— #21 卡片墙 —— */
+.dsc-wall {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.dsc-wall-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-bottom: 4px;
+  color: var(--dsw-alias-label-tertiary, #6b7280);
+  font-size: 12px;
+  line-height: 18px;
+}
+.dsc-wall-baseline {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+.dsc-series {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.dsc-series-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 6px 6px;
+  border: none;
+  border-radius: var(--dsw-radius-md, 8px);
+  background: 0 0;
+  color: var(--dsw-alias-label-primary, #111827);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+.dsc-series-head:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+}
+.dsc-series-head:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+.dsc-series-caret {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  color: var(--dsw-alias-label-tertiary, #9ca3af);
+  transition: transform 120ms ease-out;
+  transform: rotate(90deg);
+}
+.dsc-series-caret[data-collapsed] {
+  transform: rotate(0deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dsc-series-caret {
+    transition: none;
+  }
+}
+.dsc-series-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.dsc-series-count {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary, #9ca3af);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.dsc-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.dsc-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--dsw-alias-border-l3, rgba(0, 0, 0, 0.08));
+  border-radius: var(--dsw-radius-md, 8px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.04));
+}
+.dsc-card-thumb {
+  aspect-ratio: 16 / 10;
+  width: 100%;
+}
+/* 系列占位色是内容色（10 个系列各一档），不是宿主主题色；集中在这里，
+   卡片组件不再带内联背景样式。 */
+.dsc-card[data-series="AG"] .dsc-card-thumb { background: linear-gradient(135deg, #6d7cff, #3f4dd8); }
+.dsc-card[data-series="M"] .dsc-card-thumb { background: linear-gradient(135deg, #ff8a4c, #d94f2b); }
+.dsc-card[data-series="K"] .dsc-card-thumb { background: linear-gradient(135deg, #ffd166, #e09f2f); }
+.dsc-card[data-series="Z"] .dsc-card-thumb { background: linear-gradient(135deg, #8bc6a4, #3f7d63); }
+.dsc-card[data-series="H"] .dsc-card-thumb { background: linear-gradient(135deg, #f4a7c0, #c2557f); }
+.dsc-card[data-series="L"] .dsc-card-thumb { background: linear-gradient(135deg, #7fc8e8, #2f7fa8); }
+.dsc-card[data-series="V"] .dsc-card-thumb { background: linear-gradient(135deg, #c6a2f5, #7a4cc4); }
+.dsc-card[data-series="X"] .dsc-card-thumb { background: linear-gradient(135deg, #9ad0ec, #4f8fb5); }
+.dsc-card[data-series="R"] .dsc-card-thumb { background: linear-gradient(135deg, #ff6b9d, #8e3bd1); }
+.dsc-card[data-series="O"] .dsc-card-thumb { background: linear-gradient(135deg, #e0c47a, #a07b2e); }
+.dsc-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 9px 9px;
+}
+.dsc-card-id {
+  color: var(--dsw-alias-label-tertiary, #9ca3af);
+  font-size: 11px;
+  line-height: 15px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.dsc-card-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary, #111827);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
 `;

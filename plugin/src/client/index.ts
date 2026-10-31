@@ -1,10 +1,11 @@
 /**
  * Opus 片场（风格卡片启动器）· 浏览器半边入口。
  *
- * 只做两件事（票 #20 的范围）：
+ * 只做两件事：
  *   1. 在左侧栏底部（sidebar.footer.action）挂一行「Opus 片场」；
  *   2. 在整帧浮层（shell.overlay）里挂一个遮罩 + 面板：点遮罩、按 ESC、点关闭按钮都能关。
- * 卡片墙本身（341 张、搜索、详情、应用）留给 #21 / #22，这里先是一个诚实的空态。
+ * #20 交付了壳；#21 把浮层里的空态换成 341 张卡片墙（按系列分组、可折叠、可滚动）。
+ * 缩略图、搜索、详情、应用留给 #22。
  *
  * 契约要点（来自宿主 shipped 代码，已整理进 docs/dev/plugin.md）：
  * - 本文件构建后是 classic script，自己调用 window.__ModuleLoader__.load 注册 CJS 工厂；
@@ -21,6 +22,7 @@ import {
   type OverlayState,
 } from "./overlay-state";
 import { STYLE_CARDS_CSS } from "./styles";
+import { CardWall } from "./card-wall";
 
 const PLUGIN_ID = "dsh-style-cards";
 const ENTRY_ID = "dsh-style-cards.entry";
@@ -28,7 +30,6 @@ const OVERLAY_ID = "dsh-style-cards.overlay";
 const ENTRY_SLOT = "sidebar.footer.action";
 const OVERLAY_SLOT = "shell.overlay";
 const LABEL = "Opus 片场";
-const EMPTY_HINT = "卡片墙还没接上：下一步会把这 341 张风格卡片按系列铺进这里。";
 
 /** 宿主提供给插件的 slots 服务里，本插件用到的那两个方法。 */
 interface SlotsService {
@@ -260,7 +261,7 @@ export function apply(ctx: PluginContext): void {
         React.createElement(
           "div",
           { className: "dsc-body" },
-          React.createElement("p", { className: "dsc-empty" }, EMPTY_HINT),
+          React.createElement(CardWall, null),
         ),
       ),
     );

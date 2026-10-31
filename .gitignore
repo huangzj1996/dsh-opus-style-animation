@@ -3,8 +3,8 @@ node_modules/
 
 # 构建产物（plugin/lib 由 pnpm build 生成，不入库）
 plugin/lib/
-# 构建期生成的卡片目录与原文（由 plugin/scripts/generate-catalog.mjs 从随仓素材包生成，不入库）
-plugin/src/data/catalog.generated.ts
+# 构建期生成的资产索引（plugin/scripts/generate-asset-index.mjs 从已提交的 assets/index.json 序列化，不入库）
+plugin/src/data/asset-index.generated.ts
 
 # 一次性探针/研究工作区
 .tmp-*/

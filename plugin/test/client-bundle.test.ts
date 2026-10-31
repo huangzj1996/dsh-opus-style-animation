@@ -40,7 +40,9 @@ describe("浏览器半边产物", () => {
 
   it("工厂返回带 slots 注入与 apply 的插件对象", () => {
     const registered = loadBundle();
-    const plugin = registered.factory!((id) => (id === "react" ? {} : undefined)) as {
+    const plugin = registered.factory!((id) =>
+      id === "react" ? { memo: (component: unknown) => component } : undefined,
+    ) as {
       inject?: string[];
       apply?: unknown;
     };
@@ -77,6 +79,7 @@ describe("浏览器半边在宿主里跑起来", () => {
     };
     const fakeReact = {
       createElement: (...args: unknown[]) => args,
+      memo: (component: unknown) => component,
       useRef: () => ({ current: null }),
       useEffect: () => undefined,
       useSyncExternalStore: () => ({ open: false }),
@@ -113,5 +116,18 @@ describe("浏览器半边在宿主里跑起来", () => {
     // 卸载 = ctx 帮我们调 effect 的清理函数：样式表必须被摘掉（「不留残影」）。
     for (const dispose of disposers) dispose();
     expect(styleElements[0]?.removed).toBe(true);
+  });
+});
+describe("内置资产索引", () => {
+  it("341 份原文随 bundle 一起发出去，运行期不读盘、不联网", () => {
+    const code = readFileSync(bundlePath, "utf8");
+    // 抽三份原文里的独有字符串：A1 的代码样片、L4 的 11 节规约、O 系列的中文。
+    expect(code).toContain("字雨");
+    expect(code).toContain("延时摄影交响");
+    expect(code).toContain("电视新闻包装");
+    expect(code).not.toContain("node:fs");
+    expect(code).not.toContain("readFileSync");
+    expect(code).not.toContain("XMLHttpRequest");
+    expect(code).not.toMatch(/\bfetch\(/);
   });
 });

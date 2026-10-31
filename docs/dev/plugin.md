@@ -114,19 +114,32 @@ node scripts/verify-client-module.mjs dsh-style-cards
 回滚到安装前：备份 profile 的 `package.json` / `pnpm-lock.yaml` / `cordis.patch.yml`，需要时覆盖回去并
 `dsh plugin --profile desktop install --frozen-lockfile`。
 
-## 6. 测试
+## 6. 测试与构建期数据
 
 ```powershell
-pnpm --dir plugin typecheck   # tsc --noEmit
-pnpm --dir plugin test        # 先构建，再 vitest run
+pnpm --dir plugin generate    # assets/index.json → src/data/asset-index.generated.ts
+pnpm --dir plugin typecheck   # 生成数据 + tsc --noEmit
+pnpm --dir plugin test        # 先构建（含生成数据），再 vitest run
 ```
 
-三条 seam：纯状态机（`src/client/overlay-state.ts`）、构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、包清单（`test/package-manifest.test.ts`）。
+`pnpm build` 会先跑 `scripts/generate-asset-index.mjs`：读**已提交**的 `assets/index.json`（由仓库根的
+`scripts/build-assets.mjs` 从素材包生成，内联 341 份 md 原文），只做「JSON → TS 模块」的序列化，
+产出 `src/data/asset-index.generated.ts`（约 1.7 MB；构建产物，gitignore）。它不再解析 md、不依赖素材包在场；
+新克隆只要有 `assets/` 就能构建。`DSC_ASSET_INDEX=<path>` 可指向别的索引文件。浏览器 bundle 因此从 #20 的
+~11 KB 涨到 ~1.5 MB——这是 341 份原文内置的代价，运行期只 `JSON.parse` 一次、不读盘、不联网。
+资产漂移用 `pnpm check:assets`（即 `node scripts/build-assets.mjs --check`）判（需要素材包在场）。
+
+seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-data.test.ts` 全量逐字节）、
+卡片墙 DOM（`test/card-wall.test.ts`，jsdom）、首帧基线（`test/render-baseline.test.ts`）、
+纯状态机（`src/client/overlay-state.ts`）、构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、
+包清单（`test/package-manifest.test.ts`）。
 
 ## 7. 已知边界
 
 - 浮层在 `overlayLayer`（`z-index:20`）这个层叠上下文里，压不过宿主的 settings 全屏层（`z-index:1000`）；实际使用中碰不到。
 - `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「Opus 片场」是写死的中文（v1 中文界面，符合规格）。
 - 图标没有可复用的宿主图标包（禁止 import `client-ui-primitives`），全部用内联 SVG。
+- 卡片墙的系列占位色是**内容色**（10 个系列各一档，写在 `styles.ts` 的 `.dsc-card[data-series=…]` 里），
+  不是宿主 `--dsw-alias-*` 主题令牌；它不随深浅色切换，这是有意为之，不违反「颜色只用主题令牌」。
 - 第三方 bundle 无法读到宿主页面 console，视觉回归只能靠人眼或将来加一条宿主路由做 beacon。
 - 浮层打开期间遮罩接管指针（点遮罩即关闭，验收判据要求）：会话本身不被重挂载、流式输出照常，关闭后原样继续；如果要求打开时也能点背后，就和「点遮罩关闭」冲突，需要先改判据。

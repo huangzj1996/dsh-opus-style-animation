@@ -4,6 +4,8 @@
   "description": "把 341 份预置的代码动画风格做成 DSH 侧栏里的风格卡片",
   "scripts": {
     "build": "pnpm --dir plugin build",
+    "generate": "pnpm --dir plugin generate",
+    "check:assets": "node scripts/build-assets.mjs --check",
     "test": "pnpm --dir plugin test",
     "typecheck": "pnpm --dir plugin typecheck"
   }
