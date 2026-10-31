@@ -1,13 +1,32 @@
 /**
- * Opus 片场的宿主半边。
+ * Opus 片场的宿主半边：注册缩略图 prefix 路由（ADR-0002）。
  *
- * v1 的插件能力全在浏览器半边（侧栏入口 + 浮层），宿主侧不需要任何服务：
- * 这一行存在的意义是让 Loader 里有一行它，客户端 bundle 才能随行装载。
- * 因此它只声明自己、什么都不做，也不 inject 任何服务——profile 里缺服务时不会把它拖崩。
+ * - 路由 /style-cards 只服务包内 assets/stills/ 的扁平 <id>.jpg；
+ * - 资产在仓库根 assets/（v1 用 link 安装，lib/../.. 即仓库根）；将来打包分发时要把
+ *   assets/stills 拷进包内——见 ADR-0002 的「源包保留策略」与 #26。
+ * - 服务缺席（如 Electron file:// 模式）时宿主半边不激活；客户端自动退化为系列色块占位。
  */
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createStillsRoute, type StillsRoute } from "./stills-route";
+
+/** lib/index.js → plugin/ → 仓库根/assets/stills。 */
+const STILLS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "assets", "stills");
+
+interface WebServerLike {
+  register(route: StillsRoute): () => void;
+}
+
+interface HostPluginContext {
+  webServer: WebServerLike;
+  effect(setup: () => () => void, label?: string): void;
+}
+
 export default {
   name: "dsh-style-cards",
-  apply(): void {
-    // 无宿主副作用。
+  inject: ["webServer"],
+  apply(ctx: HostPluginContext): void {
+    const route = createStillsRoute({ stillsDir: STILLS_DIR });
+    ctx.effect(() => ctx.webServer.register(route), "dsh-style-cards: stills route");
   },
 };

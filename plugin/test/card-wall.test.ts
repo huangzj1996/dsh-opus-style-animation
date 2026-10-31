@@ -231,4 +231,15 @@ describe("搜索与系列筛选", () => {
     });
     expect(container.querySelectorAll(".dsc-card")).toHaveLength(15);
   });
+
+  it("有静帧的卡片渲染懒加载缩略图；无静帧的显示系列色块 + ID", async () => {
+    const container = await renderWall();
+    const a1 = container.querySelector('[data-card-id="A1"]');
+    expect(a1?.querySelector("img")?.getAttribute("src")).toBe("style-cards/stills/A1.jpg");
+    expect(a1?.querySelector("img")?.getAttribute("loading")).toBe("lazy");
+
+    const k12 = container.querySelector('[data-card-id="K12"]');
+    expect(k12?.querySelector("img")).toBeNull();
+    expect(k12?.querySelector(".dsc-still-fallback")?.textContent).toBe("K12");
+  });
 });

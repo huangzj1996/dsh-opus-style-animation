@@ -12,6 +12,7 @@ import { buildStyleSearchIndex, filterStyles, hasQueryTerms, type CardFilter } f
 import type { SeriesGroup, StyleAsset } from "../catalog/types";
 import { ASSET_INDEX, ASSET_INDEX_PARSE_MS } from "../data/asset-index.generated";
 import { recordRenderBaseline, type RenderBaseline } from "./render-baseline";
+import { StillImage } from "./still";
 
 /**
  * 检索索引懒建一次、全局复用：进详情会卸载卡片墙，回到墙时不该再花几毫秒重建索引；
@@ -37,10 +38,7 @@ function StyleCardTile(style: StyleAsset, onOpen: (style: StyleAsset) => void): 
       "aria-label": style.id + " " + label + "，查看详情",
       onClick: () => onOpen(style),
     },
-    React.createElement("span", {
-      className: "dsc-card-thumb",
-      "aria-hidden": "true",
-    }),
+    React.createElement(StillImage, { style, className: "dsc-card-thumb" }),
     React.createElement(
       "span",
       { className: "dsc-card-meta" },

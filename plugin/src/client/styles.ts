@@ -233,9 +233,28 @@ export const STYLE_CARDS_CSS = `
   cursor: pointer;
 }
 .dsc-card-thumb {
-  display: block;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   aspect-ratio: 16 / 10;
   width: 100%;
+  overflow: hidden;
+}
+.dsc-still-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dsc-still-fallback {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--dsw-alias-label-primary-foreground, #ffffff);
 }
 /* 系列占位色是内容色（10 个系列各一档），不是宿主主题色；集中在这里，
    卡片组件不再带内联背景样式。 */
@@ -333,6 +352,25 @@ export const STYLE_CARDS_CSS = `
   font-size: 20px;
   line-height: 28px;
   font-weight: 600;
+}
+.dsc-detail-still {
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--dsw-radius-md, 8px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.04));
+}
+.dsc-detail-still-frame {
+  display: block;
+  max-width: 100%;
+}
+.dsc-detail-still-frame .dsc-still-img {
+  position: static;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 32vh;
+  object-fit: contain;
 }
 .dsc-license {
   display: flex;

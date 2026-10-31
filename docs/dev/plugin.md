@@ -10,7 +10,7 @@
 |---|---|
 | `package.json` `dsh.bundle.patch` → `cordis.patch.yml` | 往 Loader 里插一行（没有这一行，客户端半边不会装载） |
 | `package.json` `dsh.client` = `{ platform: "web", immediately: true, inject: [] }` + `exports["./client"]` | 告诉宿主这是一个浏览器插件、bundle 在哪 |
-| `lib/index.js` | 宿主半边：`export default { name, apply() {} }`，可为空实现 |
+| `lib/index.js` | 宿主半边：注册缩略图 prefix 路由（`export default { name, inject: ['webServer'], apply() }`） |
 | `lib/client.js` | 浏览器半边：`window.__ModuleLoader__.load({ id: 包名, factory(require) { … return module.exports } })` |
 | `locale/*.json`、`icon` | 插件管理器的展示元数据与图标（不激活也会读） |
 
@@ -89,6 +89,16 @@ curl.exe -sS -N --max-time 3 'http://127.0.0.1:51188/plugins/events'
 - 按 `entries[].url`（形如 `plugins/??dsh-style-cards/client.js&rev=…`）取回 200 → bundle 可服务；
 - 两者都过 = **Host 侧**已生效。页面里的视觉（入口长什么样、浮层开合）需要人看一眼——页面 console 与 DOM 不在 agent 可观测范围内。
 
+缩略图路由是公开资产，同样不需要认证，可以直接探：
+
+```powershell
+# 200 + image/jpeg + cache-control；穿越必须 403/404
+curl.exe -sS -D - -o NUL 'http://127.0.0.1:51188/style-cards/stills/A1.jpg'
+curl.exe -sS --path-as-is -o NUL -w '%{http_code}\n' 'http://127.0.0.1:51188/style-cards/stills/%2e%2e%2fLICENSES%2fLICENSE'
+```
+
+注意：宿主半边改动需要一次重组合（见 §3）后这条路由才在，客户端 bundle 的改动才走 HMR。
+
 仓库自带一个只读验证脚本（Node 22+，无需依赖）：
 
 ```powershell
@@ -135,6 +145,7 @@ seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-d
 卡片墙（含搜索 / 系列筛选）与详情 DOM（`test/card-wall.test.ts`、`test/panel.test.ts`，jsdom）、检索打分（`test/search.test.ts`，纯函数）、首帧基线（`test/render-baseline.test.ts`）、
 纯状态机与浮层还原（`test/overlay-state.test.ts`）、草稿装配（`test/compose-draft.test.ts`）、
 许可署名（`test/attribution.test.ts`）、会话适配器（`test/apply-session.test.ts`）、
+宿主缩略图路由（`test/stills-route.test.ts`：解析 + 真实 HTTP）、缩略图 DOM（`test/still.test.ts`，jsdom）、
 构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、包清单（`test/package-manifest.test.ts`）。
 
 ## 7. 已知边界
@@ -154,4 +165,8 @@ seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-d
 - 卡片墙的系列占位色是**内容色**（10 个系列各一档，写在 `styles.ts` 的 `.dsc-card[data-series=…]` 里），
   不是宿主 `--dsw-alias-*` 主题令牌；它不随深浅色切换，这是有意为之，不违反「颜色只用主题令牌」。
 - 第三方 bundle 无法读到宿主页面 console，视觉回归只能靠人眼或将来加一条宿主路由做 beacon。
+- **缩略图路由（#24）**：宿主半边注册 `prefix` 路由 `style-cards`，只服务 `assets/stills/` 的扁平 `<id>.jpg`；
+  响应 `Cache-Control: public, max-age=31536000, immutable`，路径穿越/非 stills 路径 403/404。v1 靠 link 安装时
+  `lib/../..` 即仓库根；将来打包分发要把 `assets/stills` 拷进包内（否则 `../assets` 失效——见 ADR-0002）。
+  Electron `file://` 模式没有 `webServer`，宿主半边不激活、客户端 img 加载失败自动退化为系列色块占位。
 - 浮层打开期间遮罩接管指针（点遮罩即关闭，验收判据要求）：会话本身不被重挂载、流式输出照常，关闭后原样继续；如果要求打开时也能点背后，就和「点遮罩关闭」冲突，需要先改判据。
