@@ -119,7 +119,11 @@ node scripts/verify-client-module.mjs dsh-style-cards
 & 'D:\software\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop remove 'dsh-style-cards'
 ```
 
-实测：禁用 → graph 回到 82 条、ABSENT；启用 → 83 条、PRESENT；卸载 → 82 条。全程无重启、无残留（graph rev 回到安装前的值）。
+实测：禁用 → graph 回到 82 条、ABSENT；启用 → 83 条、PRESENT；卸载 → 82 条、ABSENT，资产路由 404。全程无重启（graph rev 回到安装前的值）。
+
+**已知边界（#26 复核）**：Windows 上宿主打开着 bundle 时，`plugin remove` 可能留下
+`profile/node_modules/dsh-style-cards` 的 junction——profile 的 dependencies / `dsh.profile.bundles` 项已移除、
+客户端模块图里也已 ABSENT，入口不再出现；重跑 `add` 会覆盖该 junction，需要时也可手删。
 
 回滚到安装前：备份 profile 的 `package.json` / `pnpm-lock.yaml` / `cordis.patch.yml`，需要时覆盖回去并
 `dsh plugin --profile desktop install --frozen-lockfile`。
@@ -144,7 +148,8 @@ pnpm --dir plugin test        # 先构建（含生成数据），再 vitest run
 seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-data.test.ts` 全量逐字节 + 公共函数逐字）、
 卡片墙（含搜索 / 系列筛选）与详情 DOM（`test/card-wall.test.ts`、`test/panel.test.ts`，jsdom）、检索打分（`test/search.test.ts`，纯函数）、首帧基线（`test/render-baseline.test.ts`）、
 纯状态机与浮层还原（`test/overlay-state.test.ts`）、草稿装配（`test/compose-draft.test.ts`）、
-许可署名（`test/attribution.test.ts`）、会话适配器（`test/apply-session.test.ts`：openWorkspace + beforeOpen
+许可署名（`test/attribution.test.ts`）、许可字段与随附许可/逐条来源（`test/licenses.test.ts`）、
+会话适配器（`test/apply-session.test.ts`：openWorkspace + beforeOpen
 预填草稿、草稿冲突、失败与降级路径）、
 资产路由（宿主，`test/stills-route.test.ts`：解析 + 真实 HTTP）、缩略图 DOM（`test/still.test.ts`，jsdom）、
 构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、包清单（`test/package-manifest.test.ts`）。

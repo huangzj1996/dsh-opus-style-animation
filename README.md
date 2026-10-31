@@ -2,44 +2,104 @@
 
 把 341 份预置的「代码动画风格」做成 DSH 左侧栏底部的 **Opus 片场** 入口：点开挑一张风格卡片，就在新会话里按那种风格开工。
 
-状态：施工中。规格 [#19](https://github.com/huangzj1996/dsh-opus-style-animation/issues/19)，实施票 #20（插件壳）/ #21（卡片墙）/ #22（详情 + 应用）/ #23（搜索与系列筛选）/ #24（缩略图与缺图占位）。
-当前已交付 **#20 插件壳**、**#21 卡片墙**、**#22 详情 + 应用**、**#23 搜索与系列筛选** 与 **#24 缩略图与缺图占位**：侧栏底部一行「Opus 片场」；点开浮层里是 341 张风格卡，
-按 10 个系列平铺、组头可折叠、可滚动。墙顶可输入关键词（字符二元组粗筛 + BM25 重排，客户端内存，单次查询约 5 µs），
-也可按系列筛选；两者可叠加，无结果给空态，清空恢复全量。193 张有静帧的卡片显示缩略图（懒加载），其余 148 张
-显示系列色块 + ID，单张失败只退化为自己的占位。点任意卡片进详情（大图、许可三档署名、风格原文全文、可选主题），
-点「应用」会在当前/最近工作区打开新会话并把草稿填进输入框（不自动发送），浮层关闭并给一条轻提示。
+状态：**v1 已交付（2026-10-31）**。规格 [#19](https://github.com/huangzj1996/dsh-opus-style-animation/issues/19)；实施票
+[#20](https://github.com/huangzj1996/dsh-opus-style-animation/issues/20) 插件壳 /
+[#21](https://github.com/huangzj1996/dsh-opus-style-animation/issues/21) 卡片墙 /
+[#22](https://github.com/huangzj1996/dsh-opus-style-animation/issues/22) 详情 + 应用 /
+[#23](https://github.com/huangzj1996/dsh-opus-style-animation/issues/23) 搜索与系列筛选 /
+[#24](https://github.com/huangzj1996/dsh-opus-style-animation/issues/24) 缩略图与缺图占位 /
+[#25](https://github.com/huangzj1996/dsh-opus-style-animation/issues/25) 边界兜底 /
+[#26](https://github.com/huangzj1996/dsh-opus-style-animation/issues/26) 文档与收尾。
+
+当前形态：侧栏底部一行「Opus 片场」；点开浮层里是 341 张风格卡，按 10 个系列平铺、组头可折叠、可滚动。墙顶可输入关键词
+（字符二元组粗筛 + BM25 重排，客户端内存，单次查询约 5 µs），也可按系列筛选；两者可叠加，无结果给空态，清空恢复全量。
+193 张有静帧的卡片显示缩略图（懒加载），其余 148 张显示系列色块 + ID，单张失败只退化为自己的占位。点任意卡片进详情
+（大图、三档许可署名、风格原文全文、可选主题），点「应用」会在当前/最近工作区打开新会话并把草稿填进输入框（不自动发送），
+浮层关闭并给一条轻提示；空白会话里已有未发送草稿时先确认再覆盖（#25）。
+
+v1 **不做**：指令装配、骨架、闸门、播放器、npm 分发（为什么砍，见 [`docs/adr/0001-carry-style-source-not-compiled.md`](docs/adr/0001-carry-style-source-not-compiled.md)）；
+旧路线的调研与决定保留在 [`docs/research/`](docs/research/) 与地图 [#1](https://github.com/huangzj1996/dsh-opus-style-animation/issues/1) 的「历史」里，不再施工。
 
 ## 仓库结构
 
 | 路径 | 是什么 |
 |---|---|
-| `plugin/` | DSH 客户端插件包 `dsh-style-cards`（宿主半边：缩略图 prefix 路由；浏览器半边：入口 + 浮层） |
+| `plugin/` | DSH 客户端插件包 `dsh-style-cards`（宿主半边：缩略图 prefix 路由；浏览器半边：入口 + 浮层）；许可说明见 [`plugin/LICENSE.md`](plugin/LICENSE.md) |
 | `plugin/src/data/asset-index.generated.ts` | 构建期从 `assets/index.json` + `assets/shared/_公共函数.js` 序列化出的资产索引（gitignore，`pnpm generate` 生成） |
-| `assets/` | 已提交的风格资产：`index.json`（341 份 md 原文 + 元数据）、`styles/`、`stills/`、`LICENSES/`；由 `scripts/build-assets.mjs` 生成 |
+| `assets/` | 已提交的风格资产：`index.json`（341 份 md 原文 + 元数据）、`styles/`、`stills/`、`shared/`、`LICENSES/`、`SOURCES.md`；由 `scripts/build-assets.mjs` 生成 |
+| `assets/LICENSES/` | 素材包许可随附：自定义非商业许可 `LICENSE`、`NOTICE.md`、`许可与来源.md`、`第三方许可/`（三份 MIT） |
 | `docs/` | 研究、ADR、agent 文档；插件契约与开发循环见 [`docs/dev/plugin.md`](docs/dev/plugin.md) |
 | `code-animation-341-styles-main/` | 上游素材包（gitignore，只在本机用于重生成/校验 `assets/`） |
-| `animations/` | 手工生成的动画产物 |
+| `animations/` | agent 生成的动画产物（gitignore，每次新建子目录） |
+| `LICENSE` | 仓库**代码**的 MIT 许可；素材许可见 `assets/LICENSES/` 与 [`plugin/LICENSE.md`](plugin/LICENSE.md) |
 
 插件本身是**一个 npm 包**：`package.json` 声明 `dsh.bundle.patch`（Loader 行）与 `dsh.client`（浏览器半边），
 `lib/client.js` 是 `window.__ModuleLoader__.load({ id, factory(require) })` 方言的 classic script。
 
 ## 开发
 
-需要 Node 22+ 与 pnpm 11（本机 pnpm 不在 PATH 时用 DSH 自带的那份，见 [`docs/dev/plugin.md`](docs/dev/plugin.md)）。
+需要 Node 22+ 与 pnpm 11+（本机在 PATH 上的 pnpm 实测 12.16.1；`dsh plugin` 安装命令内部用的是 DSH 自带的
+pnpm 11.28.5。本机 pnpm 不在 PATH 时用 DSH 自带的那份，见 [`docs/dev/plugin.md`](docs/dev/plugin.md)）。
 
 ```powershell
 pnpm install        # 根目录一次装齐（workspace: plugin/）
 pnpm generate       # assets/index.json → plugin/src/data/asset-index.generated.ts
 pnpm check:assets   # 校验 assets/ 与素材包一致（需要素材包在场）
-pnpm test           # 先构建，再跑 vitest（资产索引 / 卡片墙 / 状态机 / 产物方言 / 包清单）
+pnpm test           # 先构建，再跑 vitest
 pnpm typecheck      # 生成资产索引 + tsc --noEmit
 pnpm build          # 生成资产索引 + lib/client.js + lib/index.js
 ```
 
 构建只依赖已提交的 `assets/`，新克隆不需要素材包。生成的模块里同时逐字内联了代码样片共用的
-`assets/shared/_公共函数.js`（应用 A–G 代码样片时附进草稿）。素材包只用于重生成/校验资产：
-`node scripts/build-assets.mjs` 重新生成 `assets/`，`node scripts/build-assets.mjs --check` 校验漂移。
-生成的资产索引模块与 `plugin/lib/` 一样是构建产物，不入库。
+`assets/shared/_公共函数.js`（应用 A–G 代码样片时附进草稿）。生成的资产索引模块与 `plugin/lib/` 一样是构建产物，不入库。
+
+## 素材与许可（#26）
+
+### `assets/` 是生成物，不要手改
+
+`assets/` 由 `scripts/build-assets.mjs` 从**素材包** `code-animation-341-styles-main/` 确定性生成（同一素材包重跑
+逐字节一致）：
+
+```powershell
+node scripts/build-assets.mjs          # 生成/重生成 assets/
+node scripts/build-assets.mjs --check  # 校验漂移；不一致时退出码 2
+pnpm check:assets                      # 同上（根 package.json 的脚本）
+```
+
+- **手改 `assets/` 会被判漂移**：任何直接改 `assets/` 文件的行为都会在 `--check` 时报 `drift: <路径>`；改素材必须先改素材包再重生成。
+- 素材包路径是仓库根的 `code-animation-341-styles-main/`（**gitignore、不入库**，B 档瘦身后 13.7 MB）；新克隆只要有已提交的
+  `assets/` 就能构建，但 `--check` 需要素材包在场——包被删掉时该命令会报错，这是有意的（宁可失败也不静默通过）。
+
+### 随附许可（`assets/LICENSES/`）
+
+| 文件 | 内容 |
+|---|---|
+| `LICENSE` | 素材包**自定义非商业许可**全文（中英对照，作者 wqb578 / 俯仰观照） |
+| `NOTICE.md` | 三个 MIT 系列（L / V / X，共 105 条）的清单、版权人与覆盖范围声明 |
+| `许可与来源.md` | 作者自述哪些是自己整理/制作、哪些来自网络 |
+| `第三方许可/` | Lemo-Opuscar、mg-styles-15、code-video 三份 MIT 许可**原文**（未修改） |
+| `assets/SOURCES.md` | **逐条来源表**：341 张卡片每行一条（id / 名称 / 系列 / 许可 / 指回素材包的原始 md 路径） |
+
+### 三档署名（与 #12 结论一致）
+
+| `license` 值 | 数量 | 署名 |
+|---|---|---|
+| `MIT` | **105**（L 59 / V 15 / X 31） | © 2026 LemoLab / Vincentwei1021 / Bae-ChangHyun；保留版权声明与 MIT 原文即可 |
+| `free-share-no-sell` | **236**（A–G / M / K / Z / H / R / O） | © 俯仰观照；免费使用、免费再分发，**禁止**包装成课程、付费 skills 或其他收费产品出售 |
+| 逐条 `source` | 全部 341 条 | 指回 `许可与来源.md` 与素材包里的原始 `.md`；UI 详情逐卡显示 |
+
+插件包自己的 `license` 字段是 **`SEE LICENSE IN LICENSE.md`**，**绝不写 MIT**（`plugin/package.json`）：
+`plugin/LICENSE.md` 分开说明「插件代码 = 仓库根 LICENSE 的 MIT」与「风格素材 = 上述三档」，并写明再分发时必须整套保留
+`assets/LICENSES/` 与 `assets/SOURCES.md`。
+
+**公开仓库内即再分发、非商业**：`assets/`（341 份原文 + 193 张静帧）提交进这个公开仓库，本身**已经构成对第三方素材的再分发**。
+在该许可下这是允许的（保留署名与相同许可、免费分享），但**不得商业化**；v1 不发 npm、不设付费层。将来真要把插件打包分发
+（npm 或把 `assets/stills` 拷进包内）之前，按 [#12](https://github.com/huangzj1996/dsh-opus-style-animation/issues/12) 的结论复核
+「三份 MIT 是否逐字携带、合集是否被误标 MIT、是否混入付费层」。
+
+来源标注（再分发必须保留）：
+
+> **来源：来自俯仰观照博主的动画画风整理**
 
 ## 装进本机 profile（Desktop）
 
@@ -58,10 +118,29 @@ pnpm build
 
 它做三件事：`pnpm add` 在 profile 里建一个指向 `plugin/` 的 junction；把 `dsh-style-cards` 追加进 profile
 `package.json` 的 `dsh.profile.bundles`；**不需要改 profile 自己的 `cordis.patch.yml`**（插入行在插件包自带的
-`cordis.patch.yml` 里）。装完约 1 秒内运行中的宿主就会把它装进客户端模块图（见下面的无屏验证），不需要重启宿主。
-页面里的入口/浮层长什么样由浏览器渲染，agent 观测不到，需要人看一眼（本轮验收就是这样收的口）。
+`cordis.patch.yml` 里）。装完约 1 秒内运行中的宿主就会把它装进客户端模块图，不需要重启宿主。
+页面里的入口/浮层长什么样由浏览器渲染，agent 观测不到，需要人看一眼（见下面的从零验收）。
 
 GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**。
+
+### 从零验收：装 → 开 → 用 → 卸
+
+按 README 从零走一遍，每步都有可复核的判据（**无屏** = 命令/HTTP 可验，**人眼** = 页面里看一眼）：
+
+1. **构建**：`pnpm install`、`pnpm build`，退出码 0。
+2. **安装**：跑上面的 `dsh plugin ... add` 命令，退出码 0。
+3. **无屏**：`node scripts/verify-client-module.mjs dsh-style-cards` 退出码 **0**（条目 PRESENT、bundle 200）；
+   资产路由 `curl.exe -sS -D - -o NUL 'http://127.0.0.1:51188/style-cards/stills/A1.jpg'` 返回 **200 + image/jpeg**。
+4. **人眼**：侧栏底部出现「Opus 片场」；点它 → 浮层卡片墙可开、341 张、有搜索框与系列分组、缩略图/占位正常。
+5. **人眼**：点一张卡 → 详情（大图、三档许可署名、原文全文、主题框）→ 点「应用」→ 打开**新会话**，输入框里已有
+   「任务说明 + 原文」草稿且**未发送**，浮层关闭并出现轻提示。
+6. **卸载**：跑下面的卸载命令（或先按「禁用」验证）。无屏判据：`verify-client-module.mjs` 退出码 **2**（ABSENT）、
+   资产路由 **404**；人眼判据：侧栏入口消失。
+7. **重装**：再跑一次安装命令，回到第 3 步的 PRESENT/200，入口与卡片墙恢复。
+
+**实测（2026-10-31，#26 从零）**：卸载 → 客户端模块图 82 条 / `dsh-style-cards` ABSENT / 资产路由 404；
+重装 → 83 条 / PRESENT / 路由 200。禁用 → 82 条 / ABSENT / 404；启用 → 83 条 / PRESENT / 200。
+页面视觉（入口、卡片墙、应用后新会话草稿、卸载后入口消失）按上面的「人眼」判据确认。
 
 ## 热更（开发循环）
 
@@ -127,10 +206,12 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
   **这一张**退化为系列色块 + ID；卡片缩略图与详情大图共用同一个媒体槽与同一套系列色变量（`--dsc-series-a/b`），
   详情大图失败时也在原位退化为 ID 占位，不出现空框。两者用同一个 `stillUrl()` 来源，不出现两张不同版本。
 - **路径前提**：v1 用 link 安装，`lib/../..` 即仓库根，所以宿主半边能读到 `<repo>/assets/stills`；**这不是「包内的 assets」**
-  （`plugin/package.json` 的 `files` 不含 assets）。将来打包分发必须把 `assets/stills` 拷进包内（见 ADR-0002 的后果，留给 #26）。
+  （`plugin/package.json` 的 `files` 不含 assets）。将来打包分发必须把 `assets/stills` 拷进包内（见 ADR-0002 的后果）——
+  **本票（#26）不做**，留给真正要分发的那次工作。
 - **实测（2026-10-31）**：宿主半边重组合后，浏览器同源 GET `style-cards/stills/A1.jpg` → 200 `image/jpeg`、
   148,625 B、与本地 `assets/stills/A1.jpg` sha256 一致；`stills/../LICENSES/LICENSE` → 404、
   编码穿越 `%2e%2e%2f` → 403、`styles/A1.md` → 404、HEAD → 200。
+
 ## 无屏验证
 
 `/plugins/events` 不需要认证，可以直接读运行中的客户端模块图：
@@ -157,20 +238,25 @@ curl.exe -sS --path-as-is -o NUL -w '%{http_code}\n' 'http://127.0.0.1:51188/sty
 # - id: dsh-style-cards
 #   disabled: true
 
-# 卸载
+# 启用：删掉上面两行（宿主会在约 1 秒内重组合）
+
+# 卸载（依赖与 bundles 项一起移除）
 & 'D:\software\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop remove 'dsh-style-cards'
 ```
 
-实测（2026-10-31）：禁用 → 客户端模块图回落到 82 条且本插件 ABSENT；启用 → 83 条且 PRESENT；卸载 → 82 条；
-整轮无重启、无残留。
+实测（2026-10-31）：禁用 → 客户端模块图回落到 82 条且本插件 ABSENT、资产路由 404；启用 → 83 条且 PRESENT、路由 200；
+卸载 → 82 条 / ABSENT / 404。整轮无重启。**已知边界**：Windows 上宿主打开着 bundle 时，`plugin remove` 可能留下
+`profile/node_modules/dsh-style-cards` 的 junction（依赖与 bundles 项已移除、入口已消失）；重装会覆盖它，需要时也可手删。
 
 ## 测试
 
-`plugin/test/` 十五个文件、108 条（#25 后）：
+`plugin/test/` 十六个文件（#26 后）：
 
 - `asset-index.test.ts` — 四类真实样本的索引读取（A1 代码样片、L4 11 节英文规约、H10 一句话、M14 空卡）；
 - `catalog-data.test.ts` — 与 `assets/index.json` 完全一致、341 张 / 10 系列 / 193 张带静帧 / 9 张空卡、字段与许可分档，以及 341 份内置原文与
   `assets/styles/*.md` 逐字节对比；
+- `licenses.test.ts`（#26）— 包 license 字段指向 `LICENSE.md`、许可说明覆盖三档、`assets/LICENSES/` 随附四类许可文件、
+  `assets/SOURCES.md` 341 行与索引逐条一致；
 - `card-wall.test.ts` — jsdom 里渲染 341 张卡、默认展开、10 个组头可折叠、组内数值序、空卡兜底文案、首帧基线写进 window、
   搜索/筛选、空态与缩略图占位各自只占内容区一个位置；
 - `render-baseline.test.ts` — 首帧基线的记录点；
@@ -190,4 +276,4 @@ curl.exe -sS --path-as-is -o NUL -w '%{http_code}\n' 'http://127.0.0.1:51188/sty
 - `still.test.ts` — jsdom：懒加载 img、无图与加载失败退化、详情大图同源。
 
 浮层的真实视觉、真实会话创建按规格留给手工冒烟（规格 #19 的 Testing Decisions）；
-#22 的端到端路径与 #24 的缩略图都已真机冒烟/探针取证。
+#22 的端到端路径、#24 的缩略图与 #25/#26 的装/卸/禁用已真机冒烟或探针取证。

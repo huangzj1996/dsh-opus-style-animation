@@ -50,16 +50,24 @@ _Avoid_: 对话、聊天窗口
 _Avoid_: 无效卡片、坏卡
 
 **素材包**：
-随仓存放的第三方提示词合集 `code-animation-341-styles-main/`，是资产与许可的权威来源。
+本机保留的第三方提示词合集 `code-animation-341-styles-main/`（gitignore、不入库；B 档瘦身后 13.7 MB），
+是 `assets/` 的生成输入、也是许可与结构的权威来源；已提交的分发内容只有 `assets/`。
 _Avoid_: 源仓库、上游（那指 GitHub）
 
 **资产索引**：
-`assets/index.json`，由 `scripts/build-assets.mjs` 从素材包确定性生成：341 份风格原文、元数据、三档许可、缩略图相对路径。
+`assets/index.json`，由 `scripts/build-assets.mjs` 从素材包确定性生成：341 份风格原文、元数据、
+许可分档（`MIT` / `free-share-no-sell`）与逐条来源、缩略图相对路径。
 _Avoid_: catalog、清单、manifest
 
 **静帧**：
 `assets/stills/<ID>.jpg` 里的一张参考画面，用作卡片缩略图与详情大图；193 张卡片有静帧，其余没有。
 _Avoid_: 截图、预览图、thumbnail
+
+**许可署名**：
+卡片详情里逐条显示的授权信息：`MIT`（105 条，L / V / X 三系列，各自版权人）/ `free-share-no-sell`
+（236 条，© 俯仰观照，素材包自定义非商业许可）/ 逐条 `source`。数据来自资产索引与 `assets/LICENSES/`；
+不把 `free-share-no-sell` 标成 MIT。
+_Avoid_: 版权页、免责声明
 
 **资产路由**：
 插件宿主半边注册的 `prefix` 路由（`style-cards`），把资产目录 `assets/stills/` 的静帧发给浏览器；客户端用同源相对 URL。

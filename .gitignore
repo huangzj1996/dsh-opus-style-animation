@@ -13,3 +13,6 @@ plugin/src/data/asset-index.generated.ts
 # 第三方素材包（仅本机保留作重建输入与夹具；对外分发内容已固化在 assets/）
 # B 档瘦身：删了 示例/ 的视频与截图、风格挑选.html；保留 风格提示词/ 与 示例 的 html/md
 code-animation-341-styles-main/
+
+# agent 生成的动画产物（每次新建子目录；用户工作区里是否入库由用户自己决定）
+animations/
