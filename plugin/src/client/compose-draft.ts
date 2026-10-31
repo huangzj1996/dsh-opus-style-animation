@@ -27,15 +27,15 @@ export interface ComposeDraftOptions {
 }
 
 /** A–G 代码样片原文里那句「公共函数在同一文件夹」；内联全文后草稿里要删掉。 */
-export const SHARED_HELPERS_SENTENCE = "公共的小工具函数在同一文件夹的 _公共函数.js 里。";
+const SHARED_HELPERS_SENTENCE = "公共的小工具函数在同一文件夹的 _公共函数.js 里。";
 
 /** 删掉原文里「公共函数在同一文件夹」那句（只该在确实内联了全文时调用）。 */
-export function stripSharedHelpersSentence(prompt: string): string {
+function stripSharedHelpersSentence(prompt: string): string {
   return prompt.split(SHARED_HELPERS_SENTENCE).join("");
 }
 
 /** 时间戳格式：本地时间 YYYYMMDD-HHmmss（目录名里不用冒号与空格）。 */
-export function formatDraftStamp(now: Date): string {
+function formatDraftStamp(now: Date): string {
   const two = (value: number): string => String(value).padStart(2, "0");
   return (
     String(now.getFullYear()) +
@@ -52,7 +52,7 @@ export function formatDraftStamp(now: Date): string {
  * 把名称压成一个安全的路径片段：去掉 Windows 不允许的字符与空白，空名兜底「未命名」。
  * 例如「数学/科学讲解（3Blue1Brown 那种）」→「数学-科学讲解（3Blue1Brown-那种）」。
  */
-export function draftPathSegment(value: string): string {
+function draftPathSegment(value: string): string {
   const cleaned = value
     .trim()
     .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-")
@@ -63,7 +63,7 @@ export function draftPathSegment(value: string): string {
 }
 
 /** 产物目录（相对工作区）：animations/<时间戳>-<ID>-<名称>/。 */
-export function draftOutputDir(style: Pick<DraftStyle, "id" | "name">, now: Date): string {
+function draftOutputDir(style: Pick<DraftStyle, "id" | "name">, now: Date): string {
   return "animations/" + formatDraftStamp(now) + "-" + style.id + "-" + draftPathSegment(style.name) + "/";
 }
 

@@ -355,10 +355,10 @@ export const STYLE_CARDS_CSS = `
   font-weight: 600;
 }
 .dsc-license[data-license="MIT"] .dsc-license-badge {
-  background: rgba(63, 125, 99, 0.18);
+  background: var(--dsw-alias-state-success-tertiary, rgba(127, 127, 127, 0.16));
 }
 .dsc-license[data-license="free-share-no-sell"] .dsc-license-badge {
-  background: rgba(217, 79, 43, 0.16);
+  background: var(--dsw-alias-state-warn-tertiary, rgba(127, 127, 127, 0.16));
 }
 .dsc-license-copyright {
   color: var(--dsw-alias-label-primary, #111827);
@@ -423,10 +423,10 @@ export const STYLE_CARDS_CSS = `
 .dsc-detail-error {
   margin: 0;
   padding: 8px 10px;
-  border: 1px solid rgba(217, 79, 43, 0.35);
+  border: 1px solid var(--dsw-alias-label-error, rgba(127, 127, 127, 0.45));
   border-radius: var(--dsw-radius-md, 8px);
-  background: rgba(217, 79, 43, 0.09);
-  color: var(--dsw-alias-label-primary, #111827);
+  background: var(--dsw-alias-interactive-bg-hover-danger, rgba(127, 127, 127, 0.08));
+  color: var(--dsw-alias-label-error, #b42318);
   font-size: 12.5px;
   line-height: 19px;
 }
@@ -443,8 +443,8 @@ export const STYLE_CARDS_CSS = `
   padding: 8px 22px;
   border: none;
   border-radius: var(--dsw-radius-md, 8px);
-  background: var(--dsw-alias-bg-accent, #2563eb);
-  color: var(--dsw-alias-label-on-accent, #ffffff);
+  background: var(--dsw-alias-button-primary-fill, #2563eb);
+  color: var(--dsw-alias-label-primary-foreground, #ffffff);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -452,7 +452,7 @@ export const STYLE_CARDS_CSS = `
   cursor: pointer;
 }
 .dsc-apply:hover {
-  filter: brightness(1.06);
+  background: var(--dsw-alias-button-primary-hover, #1d4ed8);
 }
 .dsc-apply-hint {
   color: var(--dsw-alias-label-tertiary, #6b7280);
@@ -469,8 +469,8 @@ export const STYLE_CARDS_CSS = `
   max-width: calc(100vw - 48px);
   padding: 9px 16px;
   border-radius: var(--dsw-radius-md, 8px);
-  background: var(--dsw-alias-bg-tooltip, rgba(17, 24, 39, 0.92));
-  color: var(--dsw-alias-label-inverse, #ffffff);
+  background: var(--dsw-alias-toast-bg, rgba(17, 24, 39, 0.92));
+  color: var(--dsw-alias-toast-label, #ffffff);
   font-size: 13px;
   line-height: 20px;
   box-shadow: var(--dsw-elevation-prominent, 0 10px 30px rgba(0, 0, 0, 0.28));

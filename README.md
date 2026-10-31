@@ -133,7 +133,7 @@ node scripts/verify-client-module.mjs dsh-style-cards
 
 ## 测试
 
-`plugin/test/` 十二个文件（#22 后）：
+`plugin/test/` 十一个文件、60 条（#22 后）：
 
 - `asset-index.test.ts` — 四类真实样本的索引读取（A1 代码样片、L4 11 节英文规约、H10 一句话、M14 空卡）；
 - `catalog-data.test.ts` — 与 `assets/index.json` 完全一致、341 张 / 10 系列 / 193 张带静帧 / 9 张空卡、字段与许可分档，以及 341 份内置原文与
