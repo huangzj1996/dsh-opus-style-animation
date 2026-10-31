@@ -36,6 +36,18 @@ _Avoid_: 对话、聊天窗口
 `## 风格提示词` 下没有内容的风格卡片（9 张）。不做特殊处理，照常展示。
 _Avoid_: 无效卡片、坏卡
 
+**素材包**：
+随仓存放的第三方提示词合集 `code-animation-341-styles-main/`，是资产与许可的权威来源。
+_Avoid_: 源仓库、上游（那指 GitHub）
+
+**资产索引**：
+`assets/index.json`，由 `scripts/build-assets.mjs` 从素材包确定性生成：341 份风格原文、元数据、三档许可、缩略图相对路径。
+_Avoid_: catalog、清单、manifest
+
+**资产路由**：
+插件宿主半边注册的 `prefix` 路由（`/style-cards/`），把包内 `assets/stills/` 的缩略图发给浏览器；客户端用同源相对 URL。
+_Avoid_: 静态服务、CDN
+
 **生成指令**：
 由风格原文派生、带交付契约的指令（`animations/<slug>/instruction.md` 那种形态）。v1 不产出它——不要把它和「风格原文」混着叫「提示词」。
 _Avoid_: 装配后提示词
