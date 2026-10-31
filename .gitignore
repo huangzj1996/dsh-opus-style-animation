@@ -1,0 +1,9 @@
+node_modules/
+.pnpm-store/
+
+# 构建产物（plugin/lib 由 pnpm build 生成，不入库）
+plugin/lib/
+
+# 一次性探针/研究工作区
+.tmp-*/
+.scratch/

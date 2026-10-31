@@ -1,0 +1,6 @@
+# dsh-style-cards bundle 层：插入本插件的宿主行。
+# 客户端半边（侧栏入口 + 浮层）由 package.json 的 dsh.client 声明，随该行一起装载。
+- insert:
+    - id: dsh-style-cards
+      name: 'dsh-style-cards'
+      config: {}

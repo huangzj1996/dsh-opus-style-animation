@@ -1,0 +1,104 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+import { describe, expect, it } from "vitest";
+
+// 构建产物是插件唯一真正交给宿主的文件：它必须带 ModuleLoader 方言，执行后注册一个
+// 「id = 包名、factory 返回 { inject, apply }」的工厂。宿主不会替我们检查这件事，
+// 方言写错了页面只会静静地什么都不做——所以在构建产物这一层钉一条断言。
+const bundlePath = path.resolve(import.meta.dirname, "..", "lib", "client.js");
+
+interface RegisteredFactory {
+  id?: string;
+  factory?: (require: (id: string) => unknown) => unknown;
+}
+
+function loadBundle(extraGlobals: Record<string, unknown> = {}): RegisteredFactory {
+  const code = readFileSync(bundlePath, "utf8");
+  const registered: RegisteredFactory = {};
+  const sandbox = {
+    window: {
+      __ModuleLoader__: {
+        load: (definition: RegisteredFactory) => {
+          Object.assign(registered, definition);
+        },
+      },
+    },
+    console,
+    ...extraGlobals,
+  };
+  vm.runInNewContext(code, sandbox);
+  return registered;
+}
+
+describe("浏览器半边产物", () => {
+  it("用包名注册一个工厂", () => {
+    const registered = loadBundle();
+    expect(registered.id).toBe("dsh-style-cards");
+    expect(typeof registered.factory).toBe("function");
+  });
+
+  it("工厂返回带 slots 注入与 apply 的插件对象", () => {
+    const registered = loadBundle();
+    const plugin = registered.factory!((id) => (id === "react" ? {} : undefined)) as {
+      inject?: string[];
+      apply?: unknown;
+    };
+    expect(plugin.inject).toEqual(["slots"]);
+    expect(typeof plugin.apply).toBe("function");
+  });
+});
+
+describe("浏览器半边在宿主里跑起来", () => {
+  it("apply 不会抛：两条登记都递给了 slots.inject，样式表也进了 head", () => {
+    const styleElements: Array<{ removed: boolean }> = [];
+    const fakeDocument = {
+      createElement: () => {
+        const element = {
+          removed: false,
+          attributes: {} as Record<string, string>,
+          textContent: "",
+          setAttribute(name: string, value: string) {
+            this.attributes[name] = value;
+          },
+          remove() {
+            this.removed = true;
+          },
+        };
+        styleElements.push(element as never);
+        return element;
+      },
+      head: { appendChild: () => undefined },
+    };
+    const fakeReact = {
+      createElement: (...args: unknown[]) => args,
+      useRef: () => ({ current: null }),
+      useEffect: () => undefined,
+      useSyncExternalStore: () => ({ open: false }),
+    };
+    const injectedSlots: string[] = [];
+    const registeredEntries: string[] = [];
+    const context = {
+      slots: {
+        inject: (slotName: string, callback: () => unknown) => {
+          injectedSlots.push(slotName);
+          callback();
+        },
+        register: (options: { id: string }) => {
+          registeredEntries.push(options.id);
+        },
+      },
+      effect: (setup: () => void | (() => void)) => {
+        setup();
+      },
+    };
+    const registered = loadBundle({ document: fakeDocument });
+    const livePlugin = registered.factory!((id) => (id === "react" ? fakeReact : undefined)) as {
+      apply: (ctx: unknown) => void;
+    };
+    expect(() => livePlugin.apply(context)).not.toThrow();
+    expect(injectedSlots).toEqual(["sidebar.footer.action", "shell.overlay"]);
+    expect(registeredEntries).toEqual(["dsh-style-cards.entry", "dsh-style-cards.overlay"]);
+    expect(styleElements).toHaveLength(1);
+  });
+});
