@@ -6,7 +6,7 @@
  *   2. 在整帧浮层（shell.overlay）里挂一个遮罩 + 面板：点遮罩、按 ESC、点关闭按钮都能关。
  * 卡片墙本身（341 张、搜索、详情、应用）留给 #21 / #22，这里先是一个诚实的空态。
  *
- * 契约要点（来自宿主 shipped 代码，见 .scratch/20/api-scout.md）：
+ * 契约要点（来自宿主 shipped 代码，已整理进 docs/dev/plugin.md）：
  * - 本文件构建后是 classic script，自己调用 window.__ModuleLoader__.load 注册 CJS 工厂；
  * - 工厂必须无副作用，注册全部发生在 apply(ctx) 里，并挂在 ctx.effect / ctx.slots 上；
  * - 不能用 ctx.slots.register 直连（slot 未声明会抛），一律 ctx.slots.inject(slot, () => register(...))；
@@ -127,7 +127,7 @@ function insertStyles(ctx: PluginContext): void {
     style.textContent = STYLE_CARDS_CSS;
     document.head.appendChild(style);
     return () => {
-      if (style.parentNode !== null) style.parentNode.removeChild(style);
+      style.remove();
     };
   };
   if (typeof ctx.effect === "function") ctx.effect(install, PLUGIN_ID + ": styles");
@@ -174,10 +174,38 @@ export function apply(ctx: PluginContext): void {
       restoreRef.current = typeof document === "undefined" ? null : document.activeElement;
       const onKeyDown = (event: KeyboardEvent): void => {
         // 抄宿主 modal 层的 Esc 语义：只认 Escape（不带 Shift），长按的 repeat 只吞不关。
-        if (event.key !== "Escape" || event.shiftKey) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (!event.repeat) store.dispatch("escape-pressed");
+        if (event.key === "Escape") {
+          if (event.shiftKey) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (!event.repeat) store.dispatch("escape-pressed");
+          return;
+        }
+        // 声明了 aria-modal 就得自己把 Tab 关在面板里（宿主 modal 有焦点陷阱，我们不能 import 它）。
+        if (event.key !== "Tab") return;
+        const panel = panelRef.current;
+        if (panel === null) return;
+        const focusables = Array.from(
+          panel.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        if (focusables.length === 0) {
+          event.preventDefault();
+          panel.focus();
+          return;
+        }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (first === undefined || last === undefined) return;
+        const active = document.activeElement;
+        if (event.shiftKey && (active === first || active === panel)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        }
       };
       document.addEventListener("keydown", onKeyDown, true);
       panelRef.current?.focus();

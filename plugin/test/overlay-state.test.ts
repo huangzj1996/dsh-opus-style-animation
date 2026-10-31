@@ -27,9 +27,9 @@ describe("浮层开关状态", () => {
     expect(overlayReducer(opened, "backdrop-click").open).toBe(false);
   });
 
-  it("按 ESC 关掉浮层", () => {
-    const opened = overlayReducer(CLOSED_OVERLAY, "escape-pressed");
-    expect(opened.open).toBe(false);
+  it("浮层开着时按 ESC 关掉它", () => {
+    const opened = overlayReducer(CLOSED_OVERLAY, "entry-click");
+    expect(overlayReducer(opened, "escape-pressed").open).toBe(false);
   });
 
   it("浮层已经关着时再按 ESC，仍是关着", () => {

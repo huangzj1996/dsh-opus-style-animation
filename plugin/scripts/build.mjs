@@ -22,6 +22,21 @@ const HOST_OUT = path.join(OUT_DIR, "index.js");
 
 const CLIENT_MARKER = "window.__ModuleLoader__.load(";
 
+/** 浏览器半边的 esbuild 选项；一次性构建与 watch 必须用同一份，否则两边产物会漂。 */
+function clientOptions(logLevel) {
+  return {
+    entryPoints: [path.join(PKG_DIR, "src/client/index.ts")],
+    bundle: true,
+    write: false,
+    format: "cjs",
+    platform: "browser",
+    target: "es2022",
+    external: ["react"],
+    legalComments: "none",
+    logLevel,
+  };
+}
+
 /** 把 esbuild 的 cjs 产物包进 ModuleLoader 方言。 */
 function wrapClient(body) {
   return `// 由 scripts/build.mjs 生成——不要手改，改 src/client/** 后重新构建。
@@ -51,24 +66,18 @@ function assertClientArtifact(text) {
   }
 }
 
-async function buildClient() {
-  const result = await build({
-    entryPoints: [path.join(PKG_DIR, "src/client/index.ts")],
-    bundle: true,
-    write: false,
-    format: "cjs",
-    platform: "browser",
-    target: "es2022",
-    external: ["react"],
-    legalComments: "none",
-    logLevel: "warning",
-  });
-  const body = result.outputFiles[0].text;
+/** 校验并落盘浏览器半边；一次性构建与 watch 共用这一条写路径。 */
+function writeClientArtifact(body) {
   const artifact = wrapClient(body);
   assertClientArtifact(artifact);
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.writeFileSync(CLIENT_OUT, artifact);
   return artifact.length;
+}
+
+async function buildClient() {
+  const result = await build(clientOptions("warning"));
+  return writeClientArtifact(result.outputFiles[0].text);
 }
 
 async function buildHost() {
@@ -96,26 +105,17 @@ async function buildOnce(reason) {
 
 if (process.argv.includes("--watch")) {
   await buildOnce("首次构建：");
-  const ctx = await context({
-    entryPoints: [path.join(PKG_DIR, "src/client/index.ts")],
-    bundle: true,
-    write: false,
-    format: "cjs",
-    platform: "browser",
-    target: "es2022",
-    external: ["react"],
-    logLevel: "silent",
+  const watcher = await context({
+    ...clientOptions("silent"),
     plugins: [
       {
         name: "module-loader-wrapper",
-        setup(b) {
-          b.onEnd(async (result) => {
+        setup(pluginBuild) {
+          pluginBuild.onEnd((result) => {
             if (result.errors.length > 0) return;
             try {
-              const artifact = wrapClient(result.outputFiles[0].text);
-              assertClientArtifact(artifact);
-              fs.writeFileSync(CLIENT_OUT, artifact);
-              console.log(`[${new Date().toLocaleTimeString()}] 重建 lib/client.js ${artifact.length} B`);
+              const bytes = writeClientArtifact(result.outputFiles[0].text);
+              console.log(`[${new Date().toLocaleTimeString()}] 重建 lib/client.js ${bytes} B`);
             } catch (error) {
               console.error("构建失败：", error.message);
             }
@@ -124,8 +124,8 @@ if (process.argv.includes("--watch")) {
       },
     ],
   });
-  await ctx.watch();
-  console.log("watch 中：改 src/client/** 会重建 lib/client.js（Ctrl+C 结束）");
+  await watcher.watch();
+  console.log("watch 中：改 src/client/** 会重建 lib/client.js；宿主半边改完请重跑一次 pnpm build（Ctrl+C 结束）");
 } else {
   await buildOnce("");
 }

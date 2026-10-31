@@ -28,9 +28,11 @@
 
 注册必须走 `ctx.slots.inject(slot, () => ctx.slots.register(options, Component))`：直接 `register` 会因为「slot 未声明」抛错。`list` slot 的 `id` 必填。
 
-样式：静态 bundle 没有 `styles.insert`，自己 `document.createElement('style')` + `data-plugin` 属性，在 `ctx.effect` 里返回移除函数。颜色只用主题令牌（`--dsw-alias-*`、`--dsw-radius-*`、`--dsw-elevation-*`）。
+样式：静态 bundle 没有 `styles.insert`，自己 `document.createElement('style')` + `data-plugin` 属性，在 `ctx.effect` 里返回移除函数。颜色只用主题令牌（`--dsw-alias-*`、`--dsw-radius-*`、`--dsw-elevation-*`）；`var(--token, 兜底值)` 的兜底值允许——令牌被改名时退化成中性观感，而不是整块样式失效。
 
 ## 2. 装进本机 profile
+
+`plugin/lib/` 是构建产物、不入库，安装前先 `pnpm install && pnpm build`。
 
 ```powershell
 & 'D:\software\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'link:D:/work/traeworkspace/dsh-opus-style-animation/plugin'
@@ -57,9 +59,11 @@ GUI 等价路径：侧栏 **Plugins → Add plugin → 本地绝对路径**。
 ```
 + dsh-style-cards 0.1.0 <- D:\work\traeworkspace\dsh-opus-style-animation\plugin
 node_modules\dsh-style-cards  Junction -> D:\work\...\plugin
-client 模块图：entries 82 -> 83，dsh-style-cards PRESENT rev=491e08b15e6a
-bundle 取回：HTTP 200 / 10916 B，含 __ModuleLoader__ 标记与 dsh-style-cards.overlay
+client 模块图：entries 82 -> 83，dsh-style-cards PRESENT（rev 随构建变）
+bundle 取回：HTTP 200（约 10.9 KB），含 __ModuleLoader__ 标记与 dsh-style-cards.overlay
 ```
+
+以上是**宿主侧**证据：它证明 bundle 被装载、被服务；页面里的入口渲染与浮层开合仍要人眼确认（见 §4）。
 
 ## 3. 热更（开发循环）
 
@@ -125,3 +129,4 @@ pnpm --dir plugin test        # 先构建，再 vitest run
 - `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「风格卡片」是写死的中文（v1 中文界面，符合规格）。
 - 图标没有可复用的宿主图标包（禁止 import `client-ui-primitives`），全部用内联 SVG。
 - 第三方 bundle 无法读到宿主页面 console，视觉回归只能靠人眼或将来加一条宿主路由做 beacon。
+- 浮层打开期间遮罩接管指针（点遮罩即关闭，验收判据要求）：会话本身不被重挂载、流式输出照常，关闭后原样继续；如果要求打开时也能点背后，就和「点遮罩关闭」冲突，需要先改判据。

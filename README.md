@@ -11,7 +11,7 @@
 |---|---|
 | `plugin/` | DSH 客户端插件包 `dsh-style-cards`（宿主半边 no-op + 浏览器半边） |
 | `docs/` | 研究、ADR、agent 文档；插件契约与开发循环见 [`docs/dev/plugin.md`](docs/dev/plugin.md) |
-| `code-animation-341-styles-main/` | 上游 341 份风格提示词（#21 的构建期数据源） |
+| `code-animation-341-styles-main/` | 上游 341 份风格原文（#21 的构建期数据源） |
 | `animations/` | 手工生成的动画产物 |
 
 插件本身是**一个 npm 包**：`package.json` 声明 `dsh.bundle.patch`（Loader 行）与 `dsh.client`（浏览器半边），
@@ -30,7 +30,14 @@ pnpm build          # lib/client.js + lib/index.js
 
 ## 装进本机 profile（Desktop）
 
-一条命令（需要能写 profile 的 shell；agent 沙箱里跑不动这步）：
+`plugin/lib/` 是构建产物、不入库，**装之前先构建**：
+
+```powershell
+pnpm install
+pnpm build
+```
+
+再执行安装（需要能写 profile 的 shell；agent 沙箱里跑不动这步）：
 
 ```powershell
 & 'D:\software\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'link:D:/work/traeworkspace/dsh-opus-style-animation/plugin'
@@ -38,7 +45,8 @@ pnpm build          # lib/client.js + lib/index.js
 
 它做三件事：`pnpm add` 在 profile 里建一个指向 `plugin/` 的 junction；把 `dsh-style-cards` 追加进 profile
 `package.json` 的 `dsh.profile.bundles`；**不需要改 profile 自己的 `cordis.patch.yml`**（插入行在插件包自带的
-`cordis.patch.yml` 里）。装完约 1 秒内，运行中的页面就会出现入口——不需要重启宿主。
+`cordis.patch.yml` 里）。装完约 1 秒内运行中的宿主就会把它装进客户端模块图（见下面的无屏验证），不需要重启宿主。
+页面里的入口/浮层长什么样由浏览器渲染，agent 观测不到，需要人看一眼（本轮验收就是这样收的口）。
 
 GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**。
 
@@ -46,8 +54,8 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
 
 - **改 `plugin/src/client/**`（日常 90%）**：`pnpm build` 后宿主每 500ms stat 一次 `lib/client.js`（junction 指向源目录），
   变化就通过 `/plugins/events` 推 `rebuilt`，页面自动换 bundle——**不重启、不刷页**。
-- **改 `plugin/src/host/**`**：宿主半边不自动重建，需要一次重组合：往 profile `cordis.patch.yml` 加/删一个空行，
-  或重跑一次 `dsh plugin ... add`。
+- **改 `plugin/src/host/**`**：先 `pnpm build`（`build.mjs` 的 watch 只盯 `src/client/**`），再触发一次重组合：
+  往 profile `cordis.patch.yml` 加/删一个空行，或重跑一次 `dsh plugin ... add`。
 - **不要重启宿主**：当前 agent 会话就活在那个进程里，重启等于掐掉会话。
 
 ## 无屏验证

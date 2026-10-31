@@ -8,9 +8,14 @@ const pkgDir = path.resolve(import.meta.dirname, "..");
 const pkg = JSON.parse(readFileSync(path.join(pkgDir, "package.json"), "utf8"));
 
 describe("插件包清单", () => {
-  it("声明 bundle patch 且文件存在", () => {
+  it("声明 bundle patch，且 patch 里真有插入本插件的 Loader 行", () => {
     expect(pkg.dsh?.bundle?.patch).toBe("./cordis.patch.yml");
-    expect(existsSync(path.join(pkgDir, "cordis.patch.yml"))).toBe(true);
+    const patchPath = path.join(pkgDir, "cordis.patch.yml");
+    expect(existsSync(patchPath)).toBe(true);
+    const patch = readFileSync(patchPath, "utf8");
+    expect(patch).toContain("insert:");
+    expect(patch).toMatch(/- id: dsh-style-cards\b/);
+    expect(patch).toMatch(/name: '?dsh-style-cards'?/);
   });
 
   it("声明浏览器半边：web 平台、随行加载、导出 client 产物", () => {

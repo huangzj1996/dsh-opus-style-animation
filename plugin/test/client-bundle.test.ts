@@ -52,6 +52,7 @@ describe("浏览器半边产物", () => {
 describe("浏览器半边在宿主里跑起来", () => {
   it("apply 不会抛：两条登记都递给了 slots.inject，样式表也进了 head", () => {
     const styleElements: Array<{ removed: boolean }> = [];
+    const appendedToHead: unknown[] = [];
     const fakeDocument = {
       createElement: () => {
         const element = {
@@ -68,7 +69,11 @@ describe("浏览器半边在宿主里跑起来", () => {
         styleElements.push(element as never);
         return element;
       },
-      head: { appendChild: () => undefined },
+      head: {
+        appendChild: (element: unknown) => {
+          appendedToHead.push(element);
+        },
+      },
     };
     const fakeReact = {
       createElement: (...args: unknown[]) => args,
@@ -78,6 +83,7 @@ describe("浏览器半边在宿主里跑起来", () => {
     };
     const injectedSlots: string[] = [];
     const registeredEntries: string[] = [];
+    const disposers: Array<() => void> = [];
     const context = {
       slots: {
         inject: (slotName: string, callback: () => unknown) => {
@@ -89,7 +95,8 @@ describe("浏览器半边在宿主里跑起来", () => {
         },
       },
       effect: (setup: () => void | (() => void)) => {
-        setup();
+        const cleanup = setup();
+        if (typeof cleanup === "function") disposers.push(cleanup);
       },
     };
     const registered = loadBundle({ document: fakeDocument });
@@ -100,5 +107,11 @@ describe("浏览器半边在宿主里跑起来", () => {
     expect(injectedSlots).toEqual(["sidebar.footer.action", "shell.overlay"]);
     expect(registeredEntries).toEqual(["dsh-style-cards.entry", "dsh-style-cards.overlay"]);
     expect(styleElements).toHaveLength(1);
+    expect(appendedToHead).toEqual(styleElements);
+    expect(styleElements[0]?.removed).toBe(false);
+
+    // 卸载 = ctx 帮我们调 effect 的清理函数：样式表必须被摘掉（「不留残影」）。
+    for (const dispose of disposers) dispose();
+    expect(styleElements[0]?.removed).toBe(true);
   });
 });

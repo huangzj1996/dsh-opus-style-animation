@@ -56,7 +56,6 @@ export const STYLE_CARDS_CSS = `
   align-items: center;
   justify-content: center;
   background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.42));
-  backdrop-filter: var(--dsw-mask-blur, none);
   animation: dsc-fade-in 120ms ease-out;
 }
 @keyframes dsc-fade-in {
