@@ -56,7 +56,7 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
 
 ```powershell
 # 判据：条目 PRESENT 且 bundle 返回 200 = 宿主已装载；页面里的视觉仍要人看一眼
-curl.exe -sS -N --max-time 3 'http://127.0.0.1:51188/plugins/events'
+node scripts/verify-client-module.mjs dsh-style-cards
 ```
 
 具体脚本与退出码见 [`docs/dev/plugin.md`](docs/dev/plugin.md)。

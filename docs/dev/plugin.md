@@ -85,7 +85,12 @@ curl.exe -sS -N --max-time 3 'http://127.0.0.1:51188/plugins/events'
 - 按 `entries[].url`（形如 `plugins/??dsh-style-cards/client.js&rev=…`）取回 200 → bundle 可服务；
 - 两者都过 = **Host 侧**已生效。页面里的视觉（入口长什么样、浮层开合）需要人看一眼——页面 console 与 DOM 不在 agent 可观测范围内。
 
-本次验证用的临时脚本：`.tmp-lead\verify-graph.mjs <id>`（退出码 0=PRESENT+200，2=不在 graph，3=取不到；`.tmp-*` 不入库）。
+仓库自带一个只读验证脚本（Node 22+，无需依赖）：
+
+```powershell
+node scripts/verify-client-module.mjs dsh-style-cards
+# 退出码 0 = PRESENT 且 bundle 200；2 = 不在 graph（没装/被禁用/加载失败）；3 = 在 graph 但取不到 bundle
+```
 
 ## 5. 禁用 / 卸载 / 回滚
 
