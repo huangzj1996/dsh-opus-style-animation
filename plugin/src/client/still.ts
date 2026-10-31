@@ -6,14 +6,7 @@
  */
 import * as React from "react";
 import type { StyleAsset } from "../catalog/types";
-
-/** 宿主 prefix 路由的浏览器可见前缀（见 src/host/stills-route.ts）。 */
-const STILLS_BASE = "style-cards/";
-
-/** 索引里的 stillPath → 同源相对 URL；没有静帧时 null。 */
-export function stillUrl(stillPath: string | null): string | null {
-  return stillPath === null ? null : STILLS_BASE + stillPath;
-}
+import { stillUrl } from "../shared/stills";
 
 export interface StillImageProps {
   readonly style: Pick<StyleAsset, "id" | "stillPath">;

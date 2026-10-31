@@ -40,9 +40,9 @@ export interface StyleAsset {
   readonly hasSharedHelpers: boolean;
   /** md 原文，逐字保留——不是 `## 风格提示词` 段。 */
   readonly prompt: string;
-  /** 插件包内 md 路径，例如 `styles/A1.md`。 */
+  /** 资产目录内 md 路径，例如 `styles/A1.md`。 */
   readonly promptPath: string;
-  /** 插件包内静帧路径，例如 `stills/A1.jpg`；没有静帧时为 null。 */
+  /** 资产目录内静帧路径，例如 `stills/A1.jpg`（v1 = 仓库根 assets/）；没有静帧时为 null。 */
   readonly stillPath: string | null;
   /** 原文与静帧的字节数。 */
   readonly bytes: { readonly prompt: number; readonly still: number };

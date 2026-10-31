@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import { ASSET_INDEX } from "../src/data/asset-index.generated";
 import type { StyleAsset } from "../src/catalog/types";
-import { StillImage, stillUrl } from "../src/client/still";
+import { StillImage } from "../src/client/still";
 import { StyleDetail } from "../src/client/detail";
 
 // 缩略图的 seam：URL 形状是纯函数；有图/无图/加载失败三种界面结果在 jsdom 里断言。
@@ -36,13 +36,6 @@ afterEach(() => {
     for (const root of roots.splice(0)) root.unmount();
   });
   for (const container of containers.splice(0)) container.remove();
-});
-
-describe("stillUrl", () => {
-  it("同源相对 URL：style-cards/stills/<文件>；没有静帧时 null", () => {
-    expect(stillUrl("stills/A1.jpg")).toBe("style-cards/stills/A1.jpg");
-    expect(stillUrl(null)).toBeNull();
-  });
 });
 
 describe("StillImage", () => {

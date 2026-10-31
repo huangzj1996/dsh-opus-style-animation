@@ -53,8 +53,13 @@ _Avoid_: 源仓库、上游（那指 GitHub）
 `assets/index.json`，由 `scripts/build-assets.mjs` 从素材包确定性生成：341 份风格原文、元数据、三档许可、缩略图相对路径。
 _Avoid_: catalog、清单、manifest
 
+**静帧**：
+`assets/stills/<ID>.jpg` 里的一张参考画面，用作卡片缩略图与详情大图；193 张卡片有静帧，其余没有。
+_Avoid_: 截图、预览图、thumbnail
+
 **资产路由**：
-插件宿主半边注册的 `prefix` 路由（`/style-cards/`），把包内 `assets/stills/` 的缩略图发给浏览器；客户端用同源相对 URL。
+插件宿主半边注册的 `prefix` 路由（`style-cards`），把资产目录 `assets/stills/` 的静帧发给浏览器；客户端用同源相对 URL。
+（v1 是 link 安装，资产目录 = 仓库根 `assets/`；打包分发时要把 `stills/` 拷进包内。）
 _Avoid_: 静态服务、CDN
 
 **生成指令**：

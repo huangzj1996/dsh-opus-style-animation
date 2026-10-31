@@ -1,7 +1,7 @@
 /**
  * Opus 片场的宿主半边：注册缩略图 prefix 路由（ADR-0002）。
  *
- * - 路由 /style-cards 只服务包内 assets/stills/ 的扁平 <id>.jpg；
+ * - 路由 /style-cards 只服务资产目录 assets/stills/（v1 link 安装 = 仓库根）里的扁平 <id>.jpg；
  * - 资产在仓库根 assets/（v1 用 link 安装，lib/../.. 即仓库根）；将来打包分发时要把
  *   assets/stills 拷进包内——见 ADR-0002 的「源包保留策略」与 #26。
  * - 服务缺席（如 Electron file:// 模式）时宿主半边不激活；客户端自动退化为系列色块占位。

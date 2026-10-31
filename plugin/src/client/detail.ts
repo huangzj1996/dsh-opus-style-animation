@@ -7,7 +7,8 @@ import * as React from "react";
 import { styleLabel } from "../catalog/groups";
 import type { StyleAsset } from "../catalog/types";
 import { styleAttribution } from "./attribution";
-import { StillImage, stillUrl } from "./still";
+import { hasStill } from "../shared/stills";
+import { StillImage } from "./still";
 
 export interface StyleDetailProps {
   readonly style: StyleAsset;
@@ -45,7 +46,7 @@ export function StyleDetail(props: StyleDetailProps): React.ReactElement {
       ),
     ),
     React.createElement("h3", { className: "dsc-detail-title" }, styleLabel(style)),
-    stillUrl(style.stillPath) === null
+    !hasStill(style)
       ? null
       : React.createElement(
           "div",

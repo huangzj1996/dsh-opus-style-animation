@@ -89,7 +89,7 @@ curl.exe -sS -N --max-time 3 'http://127.0.0.1:51188/plugins/events'
 - 按 `entries[].url`（形如 `plugins/??dsh-style-cards/client.js&rev=…`）取回 200 → bundle 可服务；
 - 两者都过 = **Host 侧**已生效。页面里的视觉（入口长什么样、浮层开合）需要人看一眼——页面 console 与 DOM 不在 agent 可观测范围内。
 
-缩略图路由是公开资产，同样不需要认证，可以直接探：
+资产路由是公开资产，同样不需要认证，可以直接探：
 
 ```powershell
 # 200 + image/jpeg + cache-control；穿越必须 403/404
@@ -137,7 +137,7 @@ pnpm --dir plugin test        # 先构建（含生成数据），再 vitest run
 「资产文件 → TS 模块」的序列化，产出 `src/data/asset-index.generated.ts`（约 1.7 MB；构建产物，gitignore）。
 它不解析 md、不依赖素材包在场；新克隆只要有 `assets/` 就能构建。`DSC_ASSET_INDEX=<path>` 可指向别的索引文件。
 浏览器 bundle 因此从 #20 的 ~11 KB 涨到 ~1.48 MB——这是 341 份原文 + 公共函数内置的代价，运行期只
-`JSON.parse` 一次、不读盘、不联网。应用 A–G 代码样片时，草稿末尾会附上这份 `_公共函数.js` 全文（逐字），
+`JSON.parse` 一次、不读盘；缩略图走同源资产路由、不访问外网。应用 A–G 代码样片时，草稿末尾会附上这份 `_公共函数.js` 全文（逐字），
 并把原文里「公共的小工具函数在同一文件夹的 _公共函数.js 里。」一句删掉、改由草稿说明已添加在下方。
 资产漂移用 `pnpm check:assets`（即 `node scripts/build-assets.mjs --check`）判（需要素材包在场）。
 
@@ -145,7 +145,7 @@ seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-d
 卡片墙（含搜索 / 系列筛选）与详情 DOM（`test/card-wall.test.ts`、`test/panel.test.ts`，jsdom）、检索打分（`test/search.test.ts`，纯函数）、首帧基线（`test/render-baseline.test.ts`）、
 纯状态机与浮层还原（`test/overlay-state.test.ts`）、草稿装配（`test/compose-draft.test.ts`）、
 许可署名（`test/attribution.test.ts`）、会话适配器（`test/apply-session.test.ts`）、
-宿主缩略图路由（`test/stills-route.test.ts`：解析 + 真实 HTTP）、缩略图 DOM（`test/still.test.ts`，jsdom）、
+资产路由（宿主，`test/stills-route.test.ts`：解析 + 真实 HTTP）、缩略图 DOM（`test/still.test.ts`，jsdom）、
 构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、包清单（`test/package-manifest.test.ts`）。
 
 ## 7. 已知边界
@@ -165,7 +165,7 @@ seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-d
 - 卡片墙的系列占位色是**内容色**（10 个系列各一档，写在 `styles.ts` 的 `.dsc-card[data-series=…]` 里），
   不是宿主 `--dsw-alias-*` 主题令牌；它不随深浅色切换，这是有意为之，不违反「颜色只用主题令牌」。
 - 第三方 bundle 无法读到宿主页面 console，视觉回归只能靠人眼或将来加一条宿主路由做 beacon。
-- **缩略图路由（#24）**：宿主半边注册 `prefix` 路由 `style-cards`，只服务 `assets/stills/` 的扁平 `<id>.jpg`；
+- **资产路由（#24）**：宿主半边注册 `prefix` 路由 `style-cards`，只服务资产目录 `assets/stills/` 的扁平 `<id>.jpg`；
   响应 `Cache-Control: public, max-age=31536000, immutable`，路径穿越/非 stills 路径 403/404。v1 靠 link 安装时
   `lib/../..` 即仓库根；将来打包分发要把 `assets/stills` 拷进包内（否则 `../assets` 失效——见 ADR-0002）。
   Electron `file://` 模式没有 `webServer`，宿主半边不激活、客户端 img 加载失败自动退化为系列色块占位。

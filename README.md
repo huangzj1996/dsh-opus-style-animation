@@ -75,7 +75,7 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
 
 - **数据**：单一真相是已提交的 `assets/index.json`（341 份 md 原文 + 元数据 + 许可 + 静帧路径）。
   构建期 `plugin/scripts/generate-asset-index.mjs` 只做「JSON → TS 模块」的序列化，**不再自己解析 md**；
-  运行期只读内存，不读文件系统、不联网。生成文件头记录索引 sha256（本次 341 张、193 张带静帧、
+  运行期只读内存、不读盘、不访问外网（缩略图走同源资产路由，见 #24）。生成文件头记录索引 sha256（本次 341 张、193 张带静帧、
   sha256 `1c53b7f3…`）；`node scripts/build-assets.mjs --check` 是资产漂移的判据。
 - **界面**：按规格的系列顺序（A–G / M / K / Z / H / L / V / X / R / O）分组，组内按 ID 数值序
   （A2 在 A10 前、L2 在 L10 前）；组头可折叠、默认全部展开；浮层主体滚动。
@@ -109,14 +109,14 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
 
 ## 缩略图与缺图占位（#24）
 
-- **宿主路由**：宿主半边 `plugin/src/host/index.ts` 通过 `dsh-host-webserver` 注册 `prefix` 路由 `style-cards`，
-  从包内 `assets/stills/` 读扁平 `<id>.jpg` 流给浏览器；客户端用同源相对 URL `style-cards/stills/<id>.jpg`。
+- **资产路由（宿主半边）**：`plugin/src/host/index.ts` 通过 `dsh-host-webserver` 注册 `prefix` 路由 `style-cards`，
+  从资产目录 `assets/stills/`（v1 link 安装时 = 仓库根，`lib/../..`）读扁平 `<id>.jpg` 流给浏览器；客户端用同源相对 URL `style-cards/stills/<id>.jpg`。
   只服务 `stills/` 前缀，`styles/`、`LICENSES/` 不暴露；拒绝目录穿越（原样 / 编码 / 反斜杠 / 空字节）；
   响应带 `Cache-Control: public, max-age=31536000, immutable` 与 `X-Content-Type-Options: nosniff`。
 - **客户端**：`StillImage`（`plugin/src/client/still.ts`）用 `loading="lazy"` / `decoding="async"`，加载失败只把
   **这一张**退化为系列色块 + ID；详情大图用同一个 `stillUrl()` 来源，不出现两张不同版本。
-- **路径前提**：v1 用 link 安装，`lib/../..` 即仓库根，所以宿主半边能读到 `<repo>/assets/stills`；将来打包分发，
-  必须把 `assets/stills` 拷进包内（见 ADR-0002 的后果，留给 #26 的 README）。
+- **路径前提**：v1 用 link 安装，`lib/../..` 即仓库根，所以宿主半边能读到 `<repo>/assets/stills`；**这不是「包内的 assets」**
+  （`plugin/package.json` 的 `files` 不含 assets）。将来打包分发必须把 `assets/stills` 拷进包内（见 ADR-0002 的后果，留给 #26）。
 - **实测（2026-10-31）**：宿主半边重组合后，浏览器同源 GET `style-cards/stills/A1.jpg` → 200 `image/jpeg`、
   148,625 B、与本地 `assets/stills/A1.jpg` sha256 一致；`stills/../LICENSES/LICENSE` → 404、
   编码穿越 `%2e%2e%2f` → 403、`styles/A1.md` → 404、HEAD → 200。
@@ -129,7 +129,7 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
 node scripts/verify-client-module.mjs dsh-style-cards
 ```
 
-缩略图路由可以直接同源探针（不需要浏览器 cookie；`/plugins/*` 与静态资产是公开的）：
+资产路由可以直接同源探针（不需要浏览器 cookie；`/plugins/*` 与静态资产是公开的）：
 
 ```powershell
 # 判据：200 + image/jpeg；路径穿越必须 403/404，styles/ 必须 404
@@ -155,7 +155,7 @@ curl.exe -sS --path-as-is -o NUL -w '%{http_code}\n' 'http://127.0.0.1:51188/sty
 
 ## 测试
 
-`plugin/test/` 十四个文件、88 条（#24 后）：
+`plugin/test/` 十五个文件、89 条（#24 后）：
 
 - `asset-index.test.ts` — 四类真实样本的索引读取（A1 代码样片、L4 11 节英文规约、H10 一句话、M14 空卡）；
 - `catalog-data.test.ts` — 与 `assets/index.json` 完全一致、341 张 / 10 系列 / 193 张带静帧 / 9 张空卡、字段与许可分档，以及 341 份内置原文与
@@ -171,7 +171,8 @@ curl.exe -sS --path-as-is -o NUL -w '%{http_code}\n' 'http://127.0.0.1:51188/sty
 - `panel.test.ts` — jsdom：点卡片进详情、返回恢复滚动位置、应用草稿含主题/公共函数、失败时错误留在详情里；
 - `search.test.ts` — 二元组粗筛 + BM25 的纯函数用例（#23）；
 - `stills-route.test.ts` — 宿主 prefix 路由：解析（含编码/反斜杠/空字节穿越）与真实 HTTP（200 / 404 / 405 / HEAD / 长缓存）；
-- `still.test.ts` — jsdom：URL 形状、懒加载 img、无图与加载失败退化、详情大图同源。
+- `still-url.test.ts` — 纯函数：stillPath → 同源 URL、hasStill（node 环境）；
+- `still.test.ts` — jsdom：懒加载 img、无图与加载失败退化、详情大图同源。
 
 浮层的真实视觉、真实会话创建按规格留给手工冒烟（规格 #19 的 Testing Decisions）；
 #22 的端到端路径与 #24 的缩略图都已真机冒烟/探针取证。

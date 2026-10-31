@@ -2,13 +2,13 @@
 
 **Status**: accepted (2026-10-31)
 
-v1 的 341 份风格原文与 193 张缩略图随插件包内置在 `assets/`，由 `scripts/build-assets.mjs` 从随仓的 `code-animation-341-styles-main/` 确定性生成；`assets/index.json` 内联每份 **md 原文**（不是装配后的指令）、元数据、许可与缩略图相对路径，作为客户端唯一数据源。提示词随客户端 chunk 动态加载，**缩略图不塞进 bundle**：插件包带一个 host half，用 `dsh-host-webserver` 的 `prefix` 路由（`style-cards`）从包内 `assets/stills/` 读文件流，客户端用同源相对 URL（`style-cards/stills/<id>.jpg`）。**#24 已按此落地并实测**。
+v1 的 341 份风格原文与 193 张缩略图随插件包内置在 `assets/`，由 `scripts/build-assets.mjs` 从随仓的 `code-animation-341-styles-main/` 确定性生成；`assets/index.json` 内联每份 **md 原文**（不是装配后的指令）、元数据、许可与缩略图相对路径，作为客户端唯一数据源。风格原文随客户端 chunk 动态加载，**缩略图不塞进 bundle**：插件包带一个 host half，用 `dsh-host-webserver` 的 `prefix` 路由（`style-cards`）从资产目录 `assets/stills/`（v1 link 安装 = 仓库根；不是 npm 包内的 assets）读文件流，客户端用同源相对 URL（`style-cards/stills/<id>.jpg`）。**#24 已按此落地并实测**。
 
 ## 为什么
 
 - 离线可用、版本固定：不再依赖 `raw.githubusercontent.com`，插件版本即资产版本。
 - 12.2 MB 的图片不可能进 client bundle；宿主路由是 DSH 自己给插件留的静态服务位（`webServer.register({ kind: 'prefix', path, handler })`，命名路由不会被 SPA 兜底抢走）。
-- 提示词只有 1.40 MB 且是**关键正确性数据**，内联进客户端、按需加载：即使宿主路由不可用（Electron `file://` 模式），卡片墙、详情、应用仍然完整可用，只是缩略图全部退化成占位。
+- 风格原文只有 1.40 MB 且是**关键正确性数据**，内联进客户端、按需加载：即使宿主路由不可用（Electron `file://` 模式），卡片墙、详情、应用仍然完整可用，只是缩略图全部退化成占位。
 
 ## 考虑过的替代
 
