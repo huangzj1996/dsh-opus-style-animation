@@ -23,6 +23,7 @@ import {
 import { STYLE_CARDS_CSS } from "./styles";
 import { createDraftApplier } from "./apply-session";
 import { StyleCardsPanel } from "./panel";
+import { LightHint, useLightHint } from "./light-hint";
 import { SHARED_HELPERS } from "../data/asset-index.generated";
 
 const PLUGIN_ID = "dsh-style-cards";
@@ -31,8 +32,6 @@ const OVERLAY_ID = "dsh-style-cards.overlay";
 const ENTRY_SLOT = "sidebar.footer.action";
 const OVERLAY_SLOT = "shell.overlay";
 const LABEL = "Opus 片场";
-/** 轻提示停留时长。 */
-const TOAST_MS = 3200;
 
 /** 宿主提供给插件的 slots 服务里，本插件用到的那两个方法。 */
 interface SlotsService {
@@ -176,24 +175,8 @@ export function apply(ctx: PluginContext): void {
     const state = React.useSyncExternalStore(store.subscribe, store.getState);
     const panelRef = React.useRef<HTMLDivElement | null>(null);
     const restoreRef = React.useRef<Element | null>(null);
-    const [toast, setToast] = React.useState<string | null>(null);
-    const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const showToast = React.useCallback((message: string) => {
-      setToast(message);
-      if (toastTimer.current !== null) clearTimeout(toastTimer.current);
-      toastTimer.current = setTimeout(() => {
-        toastTimer.current = null;
-        setToast(null);
-      }, TOAST_MS);
-    }, []);
-
-    React.useEffect(
-      () => () => {
-        if (toastTimer.current !== null) clearTimeout(toastTimer.current);
-      },
-      [],
-    );
+    // 轻提示的 state / 定时器 / 清理都在 useLightHint 里，入口只决定何时 show。
+    const { message: hintMessage, show: showHint } = useLightHint();
 
     React.useEffect(() => {
       if (!state.open) return;
@@ -248,12 +231,12 @@ export function apply(ctx: PluginContext): void {
       (message: string) => {
         // 先关浮层再看提示：用户回到会话，提示说明草稿已经进去了。
         store.dispatch("apply-succeeded");
-        showToast(message);
+        showHint(message);
       },
-      [showToast],
+      [showHint],
     );
 
-    if (!state.open && toast === null) return null;
+    if (!state.open && hintMessage === null) return null;
     return React.createElement(
       React.Fragment,
       null,
@@ -304,13 +287,7 @@ export function apply(ctx: PluginContext): void {
             ),
           )
         : null,
-      toast === null
-        ? null
-        : React.createElement(
-            "div",
-            { className: "dsc-toast", role: "status", "aria-live": "polite" },
-            toast,
-          ),
+      React.createElement(LightHint, { message: hintMessage }),
     );
   }
 

@@ -221,12 +221,19 @@ export const STYLE_CARDS_CSS = `
   display: flex;
   flex-direction: column;
   min-width: 0;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   border: 1px solid var(--dsw-alias-border-l3, rgba(0, 0, 0, 0.08));
   border-radius: var(--dsw-radius-md, 8px);
   background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.04));
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 .dsc-card-thumb {
+  display: block;
   aspect-ratio: 16 / 10;
   width: 100%;
 }
@@ -267,15 +274,6 @@ export const STYLE_CARDS_CSS = `
 }
 
 /* —— #22 卡片可点 / 详情 / 轻提示 —— */
-.dsc-card {
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--dsw-alias-border-l3, rgba(0, 0, 0, 0.08));
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
 .dsc-card:hover {
   border-color: var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.35));
   background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
@@ -284,10 +282,6 @@ export const STYLE_CARDS_CSS = `
   outline: 2px solid var(--dsw-alias-label-primary, #111827);
   outline-offset: 1px;
 }
-.dsc-card-thumb {
-  display: block;
-}
-
 .dsc-detail {
   display: flex;
   flex-direction: column;
@@ -324,10 +318,15 @@ export const STYLE_CARDS_CSS = `
   outline-offset: 1px;
 }
 .dsc-detail-badge {
+  font-variant-numeric: tabular-nums;
+}
+.dsc-detail-badge,
+.dsc-detail-label,
+.dsc-theme-label,
+.dsc-apply-hint {
   color: var(--dsw-alias-label-tertiary, #6b7280);
   font-size: 12px;
   line-height: 18px;
-  font-variant-numeric: tabular-nums;
 }
 .dsc-detail-title {
   margin: 0;
@@ -372,11 +371,6 @@ export const STYLE_CARDS_CSS = `
   color: var(--dsw-alias-label-tertiary, #6b7280);
   overflow-wrap: anywhere;
 }
-.dsc-detail-label {
-  color: var(--dsw-alias-label-tertiary, #6b7280);
-  font-size: 12px;
-  line-height: 18px;
-}
 .dsc-detail-prompt {
   box-sizing: border-box;
   max-height: 42vh;
@@ -399,11 +393,6 @@ export const STYLE_CARDS_CSS = `
   flex-direction: column;
   gap: 6px;
 }
-.dsc-theme-label {
-  color: var(--dsw-alias-label-tertiary, #6b7280);
-  font-size: 12px;
-  line-height: 18px;
-}
 .dsc-theme-input {
   box-sizing: border-box;
   width: 100%;
@@ -423,10 +412,10 @@ export const STYLE_CARDS_CSS = `
 .dsc-detail-error {
   margin: 0;
   padding: 8px 10px;
-  border: 1px solid var(--dsw-alias-label-error, rgba(127, 127, 127, 0.45));
+  border: 1px solid var(--dsw-alias-state-error-primary, rgba(127, 127, 127, 0.45));
   border-radius: var(--dsw-radius-md, 8px);
   background: var(--dsw-alias-interactive-bg-hover-danger, rgba(127, 127, 127, 0.08));
-  color: var(--dsw-alias-label-error, #b42318);
+  color: var(--dsw-alias-state-error-primary, #b42318);
   font-size: 12.5px;
   line-height: 19px;
 }
@@ -454,13 +443,8 @@ export const STYLE_CARDS_CSS = `
 .dsc-apply:hover {
   background: var(--dsw-alias-button-primary-hover, #1d4ed8);
 }
-.dsc-apply-hint {
-  color: var(--dsw-alias-label-tertiary, #6b7280);
-  font-size: 12px;
-  line-height: 18px;
-}
 
-.dsc-toast {
+.dsc-hint {
   position: fixed;
   left: 50%;
   bottom: 40px;
@@ -475,14 +459,14 @@ export const STYLE_CARDS_CSS = `
   line-height: 20px;
   box-shadow: var(--dsw-elevation-prominent, 0 10px 30px rgba(0, 0, 0, 0.28));
   pointer-events: none;
-  animation: dsc-toast-in 140ms ease-out;
+  animation: dsc-hint-in 140ms ease-out;
 }
-@keyframes dsc-toast-in {
+@keyframes dsc-hint-in {
   from { opacity: 0; transform: translate(-50%, 6px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dsc-toast { animation: none; }
+  .dsc-hint { animation: none; }
 }
 
 /* —— #23 搜索与系列筛选 —— */

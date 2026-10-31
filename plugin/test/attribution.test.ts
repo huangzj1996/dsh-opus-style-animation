@@ -35,4 +35,13 @@ describe("styleAttribution", () => {
       expect(styleAttribution(style).source).toBe(style.source);
     }
   });
+
+  it("每个 MIT 系列都有署名映射；新增 MIT 系列会在这里失败", () => {
+    const mitSeries = [...new Set(ASSET_INDEX.styles.filter((style) => style.license === "MIT").map((style) => style.series))].sort();
+    expect(mitSeries).toEqual(["L", "V", "X"]);
+    for (const series of mitSeries) {
+      const attribution = styleAttribution({ license: "MIT", series, source: "风格提示词/x.md" });
+      expect(attribution.copyright).not.toContain("版权人见");
+    }
+  });
 });

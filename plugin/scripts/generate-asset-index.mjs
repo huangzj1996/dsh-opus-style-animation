@@ -222,7 +222,7 @@ export async function generateAssetIndex(options = {}) {
       (changed ? "" : "（内容一致，跳过写盘）") +
       "、公共函数 " + Buffer.byteLength(sharedHelpers) + " B",
   );
-  return { index, changed, bytes: Buffer.byteLength(source), outFile, indexSha256, sharedHelpersBytes: Buffer.byteLength(sharedHelpers) };
+  return { index, changed, bytes: Buffer.byteLength(source), outFile, indexSha256 };
 }
 
 const isMain =

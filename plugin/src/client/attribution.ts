@@ -18,7 +18,11 @@ export interface StyleAttribution {
   readonly source: string;
 }
 
-/** MIT 三个系列各自的版权人（见 assets/LICENSES/NOTICE.md）。 */
+/**
+ * MIT 三个系列各自的版权人（权威来源是 assets/LICENSES/NOTICE.md）。
+ * 索引里的 license/series 是数据；版权人姓名是三条固定的上游署名，不随样式数据变化，
+ * 因此留在这里而不是进索引；新增 MIT 系列会被 attribution.test 的「每个 MIT 系列都有署名」兜住。
+ */
 const MIT_COPYRIGHT: Readonly<Record<string, string>> = {
   L: "Copyright (c) 2026 LemoLab",
   V: "Copyright (c) 2026 Vincentwei1021",
