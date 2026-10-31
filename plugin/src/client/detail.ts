@@ -75,7 +75,7 @@ export function StyleDetail(props: StyleDetailProps): React.ReactElement {
   const attribution = styleAttribution(style);
   return React.createElement(
     "div",
-    { className: "dsc-detail", "data-card-id": style.id },
+    { className: "dsc-detail", "data-card-id": style.id, "data-series": style.series },
     React.createElement(
       "div",
       { className: "dsc-detail-bar" },
@@ -102,7 +102,7 @@ export function StyleDetail(props: StyleDetailProps): React.ReactElement {
       : React.createElement(
           "div",
           { className: "dsc-detail-still", "data-role": "detail-still" },
-          React.createElement(StillImage, { style, className: "dsc-detail-still-frame", fallback: null }),
+          React.createElement(StillImage, { style, className: "dsc-detail-still-frame", fallback: "id" }),
         ),
     React.createElement(
       "div",

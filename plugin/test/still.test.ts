@@ -103,6 +103,16 @@ describe("详情大图", () => {
     expect(image?.getAttribute("loading")).toBe("lazy");
   });
 
+  it("详情大图加载失败：在同一个媒体槽里退化为系列色块 + ID", () => {
+    const container = renderDetail("A1");
+    act(() => {
+      container.querySelector('[data-role="detail-still"] img')?.dispatchEvent(new Event("error"));
+    });
+    const slot = container.querySelector('[data-role="detail-still"] [data-still="fallback"]');
+    expect(slot?.getAttribute("data-role")).toBe("still-slot");
+    expect(slot?.querySelector('[data-role="still-fallback"]')?.textContent).toBe("A1");
+  });
+
   it("无静帧的卡片详情里没有大图", () => {
     const container = renderDetail("K12");
     expect(container.querySelector('[data-role="detail-still"]')).toBeNull();

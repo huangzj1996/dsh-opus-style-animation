@@ -142,7 +142,7 @@ describe("#25 应用链路（详情 + 新会话草稿 + 边界兜底）", () => 
     expect(code).toContain("whenDraftExists");
     expect(code).toContain("startSession");
     expect(code).toContain("draft-confirm");
-    expect(code).toContain("没有风格原文");
+    expect(code).toContain("没有足够的风格提示词");
     expect(code).toContain("已带入草稿，可编辑后发送");
     expect(code).toContain("function rng(seed)");
     expect(code).toContain("_公共函数.js");

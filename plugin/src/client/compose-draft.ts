@@ -104,7 +104,7 @@ function emptyTaskLine(style: DraftStyle, now: Date): string {
     "用卡片 " +
     style.id +
     (name === "" ? "" : "「" + name + "」") +
-    " 做一段代码动画（这张卡没有风格原文，按主题自由发挥），产物写到 " +
+    " 做一段代码动画（这张卡没有足够的风格提示词，按卡片名称与主题自由发挥），产物写到 " +
     draftOutputDir(style, now) +
     "index.html。"
   );

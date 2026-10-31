@@ -261,16 +261,29 @@ export const STYLE_CARDS_CSS = `
 }
 /* 系列占位色是内容色（10 个系列各一档），不是宿主主题色；集中在这里，
    卡片组件不再带内联背景样式。 */
-.dsc-card[data-series="AG"] .dsc-card-thumb { background: linear-gradient(135deg, #6d7cff, #3f4dd8); }
-.dsc-card[data-series="M"] .dsc-card-thumb { background: linear-gradient(135deg, #ff8a4c, #d94f2b); }
-.dsc-card[data-series="K"] .dsc-card-thumb { background: linear-gradient(135deg, #ffd166, #e09f2f); }
-.dsc-card[data-series="Z"] .dsc-card-thumb { background: linear-gradient(135deg, #8bc6a4, #3f7d63); }
-.dsc-card[data-series="H"] .dsc-card-thumb { background: linear-gradient(135deg, #f4a7c0, #c2557f); }
-.dsc-card[data-series="L"] .dsc-card-thumb { background: linear-gradient(135deg, #7fc8e8, #2f7fa8); }
-.dsc-card[data-series="V"] .dsc-card-thumb { background: linear-gradient(135deg, #c6a2f5, #7a4cc4); }
-.dsc-card[data-series="X"] .dsc-card-thumb { background: linear-gradient(135deg, #9ad0ec, #4f8fb5); }
-.dsc-card[data-series="R"] .dsc-card-thumb { background: linear-gradient(135deg, #ff6b9d, #8e3bd1); }
-.dsc-card[data-series="O"] .dsc-card-thumb { background: linear-gradient(135deg, #e0c47a, #a07b2e); }
+.dsc-card[data-series="AG"], .dsc-detail[data-series="AG"] { --dsc-series-a: #6d7cff; --dsc-series-b: #3f4dd8; }
+.dsc-card[data-series="M"], .dsc-detail[data-series="M"] { --dsc-series-a: #ff8a4c; --dsc-series-b: #d94f2b; }
+.dsc-card[data-series="K"], .dsc-detail[data-series="K"] { --dsc-series-a: #ffd166; --dsc-series-b: #e09f2f; }
+.dsc-card[data-series="Z"], .dsc-detail[data-series="Z"] { --dsc-series-a: #8bc6a4; --dsc-series-b: #3f7d63; }
+.dsc-card[data-series="H"], .dsc-detail[data-series="H"] { --dsc-series-a: #f4a7c0; --dsc-series-b: #c2557f; }
+.dsc-card[data-series="L"], .dsc-detail[data-series="L"] { --dsc-series-a: #7fc8e8; --dsc-series-b: #2f7fa8; }
+.dsc-card[data-series="V"], .dsc-detail[data-series="V"] { --dsc-series-a: #c6a2f5; --dsc-series-b: #7a4cc4; }
+.dsc-card[data-series="X"], .dsc-detail[data-series="X"] { --dsc-series-a: #9ad0ec; --dsc-series-b: #4f8fb5; }
+.dsc-card[data-series="R"], .dsc-detail[data-series="R"] { --dsc-series-a: #ff6b9d; --dsc-series-b: #8e3bd1; }
+.dsc-card[data-series="O"], .dsc-detail[data-series="O"] { --dsc-series-a: #e0c47a; --dsc-series-b: #a07b2e; }
+/* 卡片缩略图与详情大图共用同一个占位位置：媒体槽里退化为系列色块 + ID。 */
+.dsc-card-thumb[data-still="fallback"],
+.dsc-detail-still-frame[data-still="fallback"] {
+  background: linear-gradient(135deg, var(--dsc-series-a, #6b7280), var(--dsc-series-b, #374151));
+}
+.dsc-detail-still-frame[data-still="fallback"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 176px;
+  min-height: 110px;
+  border-radius: var(--dsw-radius-md, 8px);
+}
 .dsc-card-meta {
   display: flex;
   flex-direction: column;

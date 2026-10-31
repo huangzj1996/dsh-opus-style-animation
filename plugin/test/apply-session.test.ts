@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createDraftApplier, type ApplyOutcome, type ServiceGetter } from "../src/client/apply-session";
+import {
+  createDraftApplier,
+  resolveTargetWorkspace,
+  type ApplyOutcome,
+  type ServiceGetter,
+} from "../src/client/apply-session";
 
 // 应用适配器的 seam：界面只依赖 apply(prompt, mode)，返回「成功 / 空白会话已有草稿 / 可读错误」。
 // 生产实现从客户端上下文取 uiWorkspace / sessions / workspaces / conversation；这里用假服务断言
@@ -69,6 +74,48 @@ function makeHost(options: HostOptions = {}) {
   return { calls, getService, services };
 }
 
+describe("resolveTargetWorkspace", () => {
+  const at = (iso: string): number => Date.parse(iso);
+  const sessions = {
+    byId: {
+      "session-current": { id: "session-current", retainedBy: { mainView: 1 }, updatedAt: at("2026-01-01T00:00:01Z") },
+      "session-fresh": { id: "session-fresh", retainedBy: {}, updatedAt: at("2026-01-03T00:00:00Z") },
+    },
+  };
+
+  it("当前主视图会话所属工作区优先", () => {
+    const workspaces = {
+      items: [
+        { workspaceId: "workspace-current", sessionIds: ["session-current"] },
+        { workspaceId: "workspace-new", sessionIds: ["session-fresh"] },
+      ],
+    };
+    expect(resolveTargetWorkspace(sessions, workspaces)).toBe("workspace-current");
+  });
+
+  it("当前会话不属于任何工作区：取会话 updatedAt 最新的工作区", () => {
+    const workspaces = {
+      items: [
+        { workspaceId: "workspace-old", sessionIds: ["session-old"], createdAt: "2026-01-01T00:00:00Z" },
+        { workspaceId: "workspace-new", sessionIds: ["session-fresh"], createdAt: "2026-01-02T00:00:00Z" },
+      ],
+    };
+    expect(resolveTargetWorkspace(sessions, workspaces)).toBe("workspace-new");
+  });
+
+  it("空工作区按 createdAt；没有工作区返回 undefined", () => {
+    const workspaces = {
+      items: [
+        { workspaceId: "workspace-old", sessionIds: [], createdAt: "2026-01-01T00:00:00Z" },
+        { workspaceId: "workspace-new", sessionIds: [], createdAt: "2026-01-02T00:00:00Z" },
+      ],
+    };
+    expect(resolveTargetWorkspace({ byId: {} }, workspaces)).toBe("workspace-new");
+    expect(resolveTargetWorkspace(sessions, { items: [] })).toBeUndefined();
+    expect(resolveTargetWorkspace(undefined, undefined)).toBeUndefined();
+  });
+});
+
 function expectError(outcome: ApplyOutcome): string {
   if (outcome.ok) throw new Error("expected an error, got ok");
   if (outcome.reason !== "error") throw new Error("expected an error, got " + outcome.reason);
@@ -78,7 +125,7 @@ function expectError(outcome: ApplyOutcome): string {
 describe("createDraftApplier", () => {
   it("正常：用当前会话所属工作区开新会话，先以 keep 探测草稿", async () => {
     const host = makeHost();
-    const outcome = await createDraftApplier(host.getService)("草稿全文");
+    const outcome = await createDraftApplier(host.getService)("草稿全文", "keep");
 
     expect(outcome).toEqual({ ok: true });
     expect(host.calls.openWorkspace).toEqual([{ workspaceId: "workspace-1" }]);
@@ -90,7 +137,7 @@ describe("createDraftApplier", () => {
 
   it("空白会话已有草稿：返回 draft-exists，本次不打开会话（beforeOpen 里中止导航）", async () => {
     const host = makeHost({ request: "preserved" });
-    const outcome = await createDraftApplier(host.getService)("草稿");
+    const outcome = await createDraftApplier(host.getService)("草稿", "keep");
 
     expect(outcome).toEqual({ ok: false, reason: "draft-exists" });
     expect(host.calls.request[0]?.options).toEqual({ prompt: "草稿", whenDraftExists: "keep" });
@@ -118,21 +165,21 @@ describe("createDraftApplier", () => {
       ],
     });
 
-    const outcome = await createDraftApplier(host.getService)("草稿");
+    const outcome = await createDraftApplier(host.getService)("草稿", "keep");
     expect(outcome).toEqual({ ok: true });
     expect(host.calls.openWorkspace).toEqual([{ workspaceId: "workspace-new" }]);
   });
 
   it("一个工作区都没有：给出可读错误，浮层可以保持打开", async () => {
     const host = makeHost({ workspaces: [], byId: {} });
-    const message = expectError(await createDraftApplier(host.getService)("草稿"));
+    const message = expectError(await createDraftApplier(host.getService)("草稿", "keep"));
     expect(message).toContain("工作区");
     expect(host.calls.openWorkspace).toEqual([]);
   });
 
   it("宿主拒绝创建：openWorkspace 的失败文本带出来，不吞掉", async () => {
     const host = makeHost({ openWorkspaceError: new Error("workspace gone") });
-    const message = expectError(await createDraftApplier(host.getService)("草稿"));
+    const message = expectError(await createDraftApplier(host.getService)("草稿", "keep"));
     expect(message).toContain("workspace gone");
   });
 
@@ -142,20 +189,20 @@ describe("createDraftApplier", () => {
       rpcError: { code: "session/create-failed", message: "host said no" },
     });
     const host = makeHost({ openWorkspaceError: refused });
-    const message = expectError(await createDraftApplier(host.getService)("草稿"));
+    const message = expectError(await createDraftApplier(host.getService)("草稿", "keep"));
     expect(message).toContain("session/create-failed");
     expect(message).toContain("host said no");
   });
 
   it("草稿初始化被占用（blocked）：给出可读重试提示", async () => {
     const host = makeHost({ request: "blocked" });
-    const message = expectError(await createDraftApplier(host.getService)("草稿"));
+    const message = expectError(await createDraftApplier(host.getService)("草稿", "keep"));
     expect(message).toContain("重试");
   });
 
   it("beforeOpen 拿不到 binding：可读错误", async () => {
     const host = makeHost({ missingBinding: true });
-    const message = expectError(await createDraftApplier(host.getService)("草稿"));
+    const message = expectError(await createDraftApplier(host.getService)("草稿", "keep"));
     expect(message).toContain("会话");
   });
 
@@ -163,16 +210,16 @@ describe("createDraftApplier", () => {
     const getService: ServiceGetter = () => {
       throw new Error("service unavailable");
     };
-    const message = expectError(await createDraftApplier(getService)("草稿"));
+    const message = expectError(await createDraftApplier(getService)("草稿", "keep"));
     expect(message).toContain("service unavailable");
   });
 
   it("拿不到 uiWorkspace：可读错误", async () => {
-    const message = expectError(await createDraftApplier(() => undefined)("草稿"));
+    const message = expectError(await createDraftApplier(() => undefined)("草稿", "keep"));
     expect(message).toContain("uiWorkspace");
   });
 
-  it("sessions/workspaces 不可用：退回 startSession(undefined, append)，不静默丢字", async () => {
+  it("sessions/workspaces 不可用：退回 startSession 且一律 append，不静默丢字", async () => {
     const host = makeHost();
     // 只留 uiWorkspace：解析工作区与预填草稿需要的服务缺席。
     const services = host.services;
@@ -180,9 +227,11 @@ describe("createDraftApplier", () => {
     delete services.workspaces;
     delete services.conversation;
 
-    const outcome = await createDraftApplier(host.getService)("草稿");
-    expect(outcome).toEqual({ ok: true });
+    // 连用户已确认 replace 的场景也只 append——降级时拿不到探测结果，宁可不覆盖。
+    await expect(createDraftApplier(host.getService)("草稿", "keep")).resolves.toEqual({ ok: true });
+    await expect(createDraftApplier(host.getService)("草稿", "replace")).resolves.toEqual({ ok: true });
     expect(host.calls.startSession).toEqual([
+      { workspaceId: undefined, options: { prompt: "草稿", whenDraftExists: "append" } },
       { workspaceId: undefined, options: { prompt: "草稿", whenDraftExists: "append" } },
     ]);
     expect(host.calls.openWorkspace).toEqual([]);

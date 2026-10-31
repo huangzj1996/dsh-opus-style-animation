@@ -45,21 +45,26 @@ export function StyleCardsPanel(props: StyleCardsPanelProps): React.ReactElement
     setCollapsed((previous) => toggleCollapsed(previous, seriesKey));
   }, []);
 
-  const openDetail = React.useCallback((style: StyleAsset) => {
-    savedScrollTop.current = bodyRef.current?.scrollTop ?? 0;
-    setSelected(style);
-    setTheme("");
+  const resetApplyState = React.useCallback(() => {
     setError(null);
     setApplying(false);
     setConfirmDraft(false);
   }, []);
 
+  const openDetail = React.useCallback(
+    (style: StyleAsset) => {
+      savedScrollTop.current = bodyRef.current?.scrollTop ?? 0;
+      setSelected(style);
+      setTheme("");
+      resetApplyState();
+    },
+    [resetApplyState],
+  );
+
   const backToWall = React.useCallback(() => {
     setSelected(null);
-    setError(null);
-    setApplying(false);
-    setConfirmDraft(false);
-  }, []);
+    resetApplyState();
+  }, [resetApplyState]);
 
   // 回到卡片墙后把滚动容器拨回进详情前的位置（详情视图会把它滚到别处）。
   React.useLayoutEffect(() => {

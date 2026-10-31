@@ -138,24 +138,32 @@ describe("卡片详情与返回", () => {
     expect(drafts[0]).not.toContain("_公共函数.js");
   });
 
-  it("空卡（M14）也能打开详情并应用：草稿只有任务说明与主题", async () => {
-    const drafts: string[] = [];
-    const container = renderPanel(async (draft) => {
-      drafts.push(draft);
-      return { ok: true };
-    });
-    await click(container.querySelector('[data-card-id="M14"]'));
-    expect(container.querySelector(".dsc-detail-title")?.textContent).toBe("（未命名）");
-    const input = container.querySelector(".dsc-theme-input") as HTMLInputElement;
-    await typeInto(input, "新年倒计时");
-    await click(container.querySelector(".dsc-apply"));
+  it("9 张空卡都能打开详情并应用：草稿只有任务说明与主题", async () => {
+    const emptyIds = ASSET_INDEX.styles.filter((style) => style.payloadKind === "empty").map((style) => style.id);
+    expect(emptyIds).toHaveLength(9);
 
-    expect(drafts).toHaveLength(1);
-    const draft = drafts[0] as string;
-    expect(draft).toContain("M14");
-    expect(draft).toContain("主题：新年倒计时");
-    expect(draft).not.toContain("## 风格提示词");
-    expect(draft.endsWith("\n")).toBe(false);
+    for (const id of emptyIds) {
+      const drafts: string[] = [];
+      const container = renderPanel(async (draft) => {
+        drafts.push(draft);
+        return { ok: true };
+      });
+      await click(container.querySelector('[data-card-id="' + id + '"]'));
+      expect(container.querySelector(".dsc-detail")).not.toBeNull();
+      if (id === "M14") expect(container.querySelector(".dsc-detail-title")?.textContent).toBe("（未命名）");
+
+      const input = container.querySelector(".dsc-theme-input") as HTMLInputElement;
+      await typeInto(input, "新年倒计时");
+      await click(container.querySelector(".dsc-apply"));
+
+      expect(drafts).toHaveLength(1);
+      const draft = drafts[0] as string;
+      expect(draft).toContain(id);
+      expect(draft).toContain("主题：新年倒计时");
+      expect(draft).not.toContain("## 风格提示词");
+      expect(draft.match(/\n{3,}/g) ?? []).toEqual([]);
+      expect(draft.endsWith("\n")).toBe(false);
+    }
   });
 
   it("开新会话失败：详情里显示可读错误、通知外层不触发（浮层保持打开），重试可以成功", async () => {

@@ -11,7 +11,8 @@
  *
  * - openWorkspace 的 Promise 在创建失败 / beforeOpen 抛错时 reject（宿主契约：
  *   「a throw aborts the open and releases the retained reference」），失败因此能回到界面上；
- * - requestDraftInitialization 返回 applied / preserved / blocked。先用 `whenDraftExists: "keep"` 探测：
+ * - requestDraftInitialization 是同步返回 applied / preserved / blocked 的（dsh-client-ui-conversation
+ *   的 InputShell.requestDraftInitialization，beforeOpen 是同步钩子）。先用 `whenDraftExists: "keep"` 探测：
  *   preserved 说明空白会话里有未发送的草稿——抛 DraftConflict 中止本次打开（会话没被切走），
  *   界面弹一次轻确认；用户确认后再以 `"replace"` 走一次。
  *
@@ -19,8 +20,8 @@
  *
  * 降级：外部 bundle 能否看到 sessions / workspaces / conversation 由运行时决定（uiWorkspace
  * 已实证，其余三个是同一客户端上下文里的服务，但没有单独实证）。拿不到时退回 #22 已验证的
- * startSession，并传 `whenDraftExists: "append"`——空白草稿为空时行为与 replace 一致，非空时追加，
- * 绝不静默丢字；代价是这一路拿不到失败面与冲突面（宿主自己弹 notice）。
+ * startSession，**一律传 `whenDraftExists: "append"`**——空草稿时行为与 replace 一致、非空时追加，
+ * 任何情况下都不静默丢字（代价是这一路拿不到失败面与冲突面，宿主自己弹 notice）。
  */
 
 /** 从客户端上下文按名字取服务（生产：`(name) => ctx.get(name)`）。 */
@@ -36,7 +37,7 @@ export type ApplyOutcome =
   | { readonly ok: false; readonly reason: "error"; readonly message: string };
 
 /** 界面依赖的形状：给一段草稿，尝试开一个新会话。 */
-export type ApplyDraft = (prompt: string, mode?: ApplyMode) => Promise<ApplyOutcome>;
+export type ApplyDraft = (prompt: string, mode: ApplyMode) => Promise<ApplyOutcome>;
 
 /** 传给宿主 requestDraftInitialization / startSession 的草稿选项。 */
 export interface StartSessionOptions {
@@ -46,17 +47,22 @@ export interface StartSessionOptions {
 
 /** 宿主 uiWorkspace 服务里本模块用到的那部分。 */
 interface WorkspaceStarter {
-  openWorkspace?(workspaceId: string, beforeOpen?: (sessionId: string) => void): Promise<void>;
+  openWorkspace?(workspaceId: string, beforeOpen: (sessionId: string) => void): Promise<void>;
   startSession?(workspaceId: undefined, options: StartSessionOptions): unknown;
 }
 
-/** 宿主 conversation 服务的输入面（只用到预填草稿）。 */
-interface DraftInitializer {
-  requestDraftInitialization?(
-    binding: unknown,
-    options: { readonly prompt: string; readonly whenDraftExists: ApplyMode },
-  ): unknown;
+/** 「打开前预填草稿」需要的三个宿主方法；形状不对时整组不成立。 */
+interface DraftHost {
+  openWorkspace(workspaceId: string, beforeOpen: (sessionId: string) => void): Promise<void>;
+  /** 读 session 的 retained binding（beforeOpen 里宿主持有引用时才有）。 */
+  readBinding(sessionId: string): unknown;
+  /** 同步返回 applied / preserved / blocked（宿主 conversation.input 的契约）。 */
+  requestDraft(binding: unknown, options: { readonly prompt: string; readonly whenDraftExists: ApplyMode }): unknown;
 }
+
+type OpenWorkspaceFn = DraftHost["openWorkspace"];
+type ReadBindingFn = DraftHost["readBinding"];
+type RequestDraftFn = DraftHost["requestDraft"];
 
 /** binding 拿不到时给用户看的原话（不套「创建失败」前缀）。 */
 class DraftPreparationError extends Error {
@@ -95,8 +101,8 @@ function errorOutcome(message: string): ApplyOutcome {
   return { ok: false, reason: "error", message };
 }
 
-/** 读一个客户端服务上的 list store 快照；拿不到（服务缺席 / 形状不符 / 抛错）返回 undefined。 */
-function readList(service: unknown): Record<string, unknown> | undefined {
+/** 读一个客户端服务的 list store 快照；拿不到（服务缺席 / 形状不符 / 抛错）返回 undefined。 */
+function readListSnapshot(service: unknown): Record<string, unknown> | undefined {
   const face = asRecord(service);
   const list = asRecord(face?.list);
   const getSnapshot = list?.getSnapshot;
@@ -106,6 +112,32 @@ function readList(service: unknown): Record<string, unknown> | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** 把三个宿主服务面收成一组「打开前预填草稿」的能力；任一形状不符返回 undefined。 */
+function draftHostOf(
+  uiService: unknown,
+  sessionsService: unknown,
+  conversationService: unknown,
+): DraftHost | undefined {
+  const ui = asRecord(uiService);
+  const sessions = asRecord(sessionsService);
+  const input = asRecord(asRecord(conversationService)?.input);
+  const openWorkspace = ui?.openWorkspace;
+  const readBinding = sessions?.binding;
+  const requestDraft = input?.requestDraftInitialization;
+  if (
+    typeof openWorkspace !== "function" ||
+    typeof readBinding !== "function" ||
+    typeof requestDraft !== "function"
+  ) {
+    return undefined;
+  }
+  return {
+    openWorkspace: (workspaceId, beforeOpen) => (openWorkspace as OpenWorkspaceFn).call(ui, workspaceId, beforeOpen),
+    readBinding: (sessionId) => (readBinding as ReadBindingFn).call(sessions, sessionId),
+    requestDraft: (binding, options) => (requestDraft as RequestDraftFn).call(input, binding, options),
+  };
 }
 
 /** 当前主视图会话 id：sessions.list 里 retainedBy.mainView > 0 的那一个（sidebar 同一套判据）。 */
@@ -182,7 +214,7 @@ function creationFailureText(error: unknown): string {
  * 形状不符都返回可读错误（降级路径见文件头），不让异常漏到界面。
  */
 export function createDraftApplier(getService: ServiceGetter): ApplyDraft {
-  return async (prompt: string, mode: ApplyMode = "keep"): Promise<ApplyOutcome> => {
+  return async (prompt: string, mode: ApplyMode): Promise<ApplyOutcome> => {
     let uiService: unknown;
     let sessionsService: unknown;
     let workspacesService: unknown;
@@ -201,33 +233,22 @@ export function createDraftApplier(getService: ServiceGetter): ApplyDraft {
       return errorOutcome("拿不到 uiWorkspace 服务，无法创建新会话。请确认 DSH 版本支持该服务后重试。");
     }
 
-    const sessions = asRecord(sessionsService);
-    const bindingOf = sessions?.binding;
-    const input = asRecord(asRecord(conversationService)?.input) as DraftInitializer | undefined;
-    const sessionSnapshot = readList(sessionsService);
-    const workspaceSnapshot = readList(workspacesService);
-    // 能完整走「打开前预填」的条件：宿主三个服务面都在，且能读到工作区与会话清单。
-    const canPrepareDraft =
-      typeof ui.openWorkspace === "function" &&
-      typeof bindingOf === "function" &&
-      typeof input?.requestDraftInitialization === "function" &&
-      sessionSnapshot !== undefined &&
-      workspaceSnapshot !== undefined;
+    const draftHost = draftHostOf(uiService, sessionsService, conversationService);
+    const sessionSnapshot = readListSnapshot(sessionsService);
+    const workspaceSnapshot = readListSnapshot(workspacesService);
 
-    if (!canPrepareDraft) {
+    if (draftHost === undefined || sessionSnapshot === undefined || workspaceSnapshot === undefined) {
+      // 降级：一律 append，任何情况下都不静默丢字（见文件头）。
       if (typeof ui.startSession !== "function") {
         return errorOutcome(
           "uiWorkspace 上找不到可用的打开会话方法（openWorkspace / startSession），无法创建新会话。",
         );
       }
       try {
-        ui.startSession(undefined, {
-          prompt,
-          whenDraftExists: mode === "replace" ? "replace" : "append",
-        });
+        ui.startSession(undefined, { prompt, whenDraftExists: "append" });
         return { ok: true };
       } catch (error) {
-        return errorOutcome("创建新会话失败：" + errorText(error));
+        return errorOutcome(creationFailureText(error));
       }
     }
 
@@ -236,18 +257,13 @@ export function createDraftApplier(getService: ServiceGetter): ApplyDraft {
       return errorOutcome("还没有可用的工作区：先在侧栏新建或选择一个工作区，再回来应用。");
     }
 
-    const openWorkspace = ui.openWorkspace;
-    if (openWorkspace === undefined) {
-      return errorOutcome("uiWorkspace 上找不到 openWorkspace，无法创建新会话。");
-    }
-
     try {
-      await openWorkspace.call(ui, target, (sessionId) => {
-        const binding = (bindingOf as (id: string) => unknown).call(sessions, sessionId);
+      await draftHost.openWorkspace(target, (sessionId) => {
+        const binding = draftHost.readBinding(sessionId);
         if (binding === undefined) {
           throw new DraftPreparationError("会话还没准备好，暂时无法填入草稿。请稍后重试。");
         }
-        const result = input!.requestDraftInitialization!(binding, { prompt, whenDraftExists: mode });
+        const result = draftHost.requestDraft(binding, { prompt, whenDraftExists: mode });
         if (result === "blocked") throw new DraftBlockedError();
         if (result === "preserved") throw new DraftConflictError();
       });

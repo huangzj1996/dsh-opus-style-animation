@@ -124,7 +124,8 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
   只服务 `stills/` 前缀，`styles/`、`LICENSES/` 不暴露；拒绝目录穿越（原样 / 编码 / 反斜杠 / 空字节）；
   响应带 `Cache-Control: public, max-age=31536000, immutable` 与 `X-Content-Type-Options: nosniff`。
 - **客户端**：`StillImage`（`plugin/src/client/still.ts`）用 `loading="lazy"` / `decoding="async"`，加载失败只把
-  **这一张**退化为系列色块 + ID；详情大图用同一个 `stillUrl()` 来源，不出现两张不同版本。
+  **这一张**退化为系列色块 + ID；卡片缩略图与详情大图共用同一个媒体槽与同一套系列色变量（`--dsc-series-a/b`），
+  详情大图失败时也在原位退化为 ID 占位，不出现空框。两者用同一个 `stillUrl()` 来源，不出现两张不同版本。
 - **路径前提**：v1 用 link 安装，`lib/../..` 即仓库根，所以宿主半边能读到 `<repo>/assets/stills`；**这不是「包内的 assets」**
   （`plugin/package.json` 的 `files` 不含 assets）。将来打包分发必须把 `assets/stills` 拷进包内（见 ADR-0002 的后果，留给 #26）。
 - **实测（2026-10-31）**：宿主半边重组合后，浏览器同源 GET `style-cards/stills/A1.jpg` → 200 `image/jpeg`、
@@ -165,7 +166,7 @@ curl.exe -sS --path-as-is -o NUL -w '%{http_code}\n' 'http://127.0.0.1:51188/sty
 
 ## 测试
 
-`plugin/test/` 十五个文件、104 条（#25 后）：
+`plugin/test/` 十五个文件、108 条（#25 后）：
 
 - `asset-index.test.ts` — 四类真实样本的索引读取（A1 代码样片、L4 11 节英文规约、H10 一句话、M14 空卡）；
 - `catalog-data.test.ts` — 与 `assets/index.json` 完全一致、341 张 / 10 系列 / 193 张带静帧 / 9 张空卡、字段与许可分档，以及 341 份内置原文与
