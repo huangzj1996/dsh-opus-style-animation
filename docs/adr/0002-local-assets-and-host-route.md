@@ -2,7 +2,7 @@
 
 **Status**: accepted (2026-10-31)
 
-v1 的 341 份风格原文与 193 张缩略图随插件包内置在 `assets/`，由 `scripts/build-assets.mjs` 从随仓的 `code-animation-341-styles-main/` 确定性生成；`assets/index.json` 内联每份 **md 原文**（不是装配后的指令）、元数据、许可与缩略图相对路径，作为客户端唯一数据源。风格原文随客户端 chunk 动态加载，**缩略图不塞进 bundle**：插件包带一个 host half，用 `dsh-host-webserver` 的 `prefix` 路由（`style-cards`）从资产目录 `assets/stills/`（v1 link 安装 = 仓库根；不是 npm 包内的 assets）读文件流，客户端用同源相对 URL（`style-cards/stills/<id>.jpg`）。**#24 已按此落地并实测**。
+v1 的 341 份风格原文与 193 张缩略图随**仓库**内置在 `assets/`（link 安装时宿主读仓库根 `assets/`，**不是 npm 包内的 assets**），由 `scripts/build-assets.mjs` 从随仓的 `code-animation-341-styles-main/` 确定性生成；`assets/index.json` 内联每份 **md 原文**（不是装配后的指令）、元数据、许可与缩略图相对路径，作为客户端唯一数据源。风格原文随客户端 chunk 动态加载，**缩略图不塞进 bundle**：插件包带一个 host half，用 `dsh-host-webserver` 的 `prefix` 路由（`style-cards`）从资产目录 `assets/stills/`（v1 link 安装 = 仓库根；不是 npm 包内的 assets）读文件流，客户端用同源相对 URL（`style-cards/stills/<id>.jpg`）。**#24 已按此落地并实测**。
 
 ## 为什么
 

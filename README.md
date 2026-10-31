@@ -17,8 +17,9 @@
 （大图、三档许可署名、风格原文全文、可选主题），点「应用」会在当前/最近工作区打开新会话并把草稿填进输入框（不自动发送），
 浮层关闭并给一条轻提示；空白会话里已有未发送草稿时先确认再覆盖（#25）。
 
-v1 **不做**：指令装配、骨架、闸门、播放器、npm 分发（为什么砍，见 [`docs/adr/0001-carry-style-source-not-compiled.md`](docs/adr/0001-carry-style-source-not-compiled.md)）；
-旧路线的调研与决定保留在 [`docs/research/`](docs/research/) 与地图 [#1](https://github.com/huangzj1996/dsh-opus-style-animation/issues/1) 的「历史」里，不再施工。
+v1 **不做**：指令装配、骨架、闸门、播放器、npm 分发（为什么砍见 [`docs/adr/0001-carry-style-source-not-compiled.md`](docs/adr/0001-carry-style-source-not-compiled.md)；
+打包分发与 `assets/stills` 进包见 [`docs/adr/0002-local-assets-and-host-route.md`](docs/adr/0002-local-assets-and-host-route.md) 的后果与 #12）；
+旧路线的调研与决定保留在 [`docs/research/`](docs/research/README.md) 与地图 [#1](https://github.com/huangzj1996/dsh-opus-style-animation/issues/1) 的「历史」里，不再施工。
 
 ## 仓库结构
 
@@ -28,8 +29,8 @@ v1 **不做**：指令装配、骨架、闸门、播放器、npm 分发（为什
 | `plugin/src/data/asset-index.generated.ts` | 构建期从 `assets/index.json` + `assets/shared/_公共函数.js` 序列化出的资产索引（gitignore，`pnpm generate` 生成） |
 | `assets/` | 已提交的风格资产：`index.json`（341 份 md 原文 + 元数据）、`styles/`、`stills/`、`shared/`、`LICENSES/`、`SOURCES.md`；由 `scripts/build-assets.mjs` 生成 |
 | `assets/LICENSES/` | 素材包许可随附：自定义非商业许可 `LICENSE`、`NOTICE.md`、`许可与来源.md`、`第三方许可/`（三份 MIT） |
-| `docs/` | 研究、ADR、agent 文档；插件契约与开发循环见 [`docs/dev/plugin.md`](docs/dev/plugin.md) |
-| `code-animation-341-styles-main/` | 上游素材包（gitignore，只在本机用于重生成/校验 `assets/`） |
+| `docs/` | 研究、ADR、agent 文档；研究笔记索引见 [`docs/research/`](docs/research/README.md)，插件契约与开发循环见 [`docs/dev/plugin.md`](docs/dev/plugin.md) |
+| `code-animation-341-styles-main/` | 素材包（gitignore，只在本机用于重生成/校验 `assets/`） |
 | `animations/` | agent 生成的动画产物（gitignore，每次新建子目录） |
 | `LICENSE` | 仓库**代码**的 MIT 许可；素材许可见 `assets/LICENSES/` 与 [`plugin/LICENSE.md`](plugin/LICENSE.md) |
 
@@ -66,7 +67,8 @@ node scripts/build-assets.mjs --check  # 校验漂移；不一致时退出码 2
 pnpm check:assets                      # 同上（根 package.json 的脚本）
 ```
 
-- **手改 `assets/` 会被判漂移**：任何直接改 `assets/` 文件的行为都会在 `--check` 时报 `drift: <路径>`；改素材必须先改素材包再重生成。
+- **手改 `assets/` 会被判漂移**：直接改、新增或删除 `assets/` 里的文件，`--check` 都会报 `drift: <路径>` 并以退出码 2
+  结束（`.DS_Store` / `Thumbs.db` / `desktop.ini` 这类系统杂项除外）；改素材必须先改素材包再重生成。
 - 素材包路径是仓库根的 `code-animation-341-styles-main/`（**gitignore、不入库**，B 档瘦身后 13.7 MB）；新克隆只要有已提交的
   `assets/` 就能构建，但 `--check` 需要素材包在场——包被删掉时该命令会报错，这是有意的（宁可失败也不静默通过）。
 
@@ -78,7 +80,12 @@ pnpm check:assets                      # 同上（根 package.json 的脚本）
 | `NOTICE.md` | 三个 MIT 系列（L / V / X，共 105 条）的清单、版权人与覆盖范围声明 |
 | `许可与来源.md` | 作者自述哪些是自己整理/制作、哪些来自网络 |
 | `第三方许可/` | Lemo-Opuscar、mg-styles-15、code-video 三份 MIT 许可**原文**（未修改） |
-| `assets/SOURCES.md` | **逐条来源表**：341 张卡片每行一条（id / 名称 / 系列 / 许可 / 指回素材包的原始 md 路径） |
+
+`assets/SOURCES.md` 是**逐条来源表**（不放在 `LICENSES/` 里）：341 张卡片每行一条（id / 名称 / 系列 / 许可 /
+指回素材包的原始 md 路径），由生成器一并写出。
+
+`NOTICE.md` 与 `许可与来源.md` 是素材包原文；文中说的「本仓库 / 根目录的 LICENSE」指**素材包**的自定义非商业许可
+（现在位于 `assets/LICENSES/LICENSE`），不是本仓代码的 MIT `LICENSE`。
 
 ### 三档署名（与 #12 结论一致）
 
@@ -86,7 +93,7 @@ pnpm check:assets                      # 同上（根 package.json 的脚本）
 |---|---|---|
 | `MIT` | **105**（L 59 / V 15 / X 31） | © 2026 LemoLab / Vincentwei1021 / Bae-ChangHyun；保留版权声明与 MIT 原文即可 |
 | `free-share-no-sell` | **236**（A–G / M / K / Z / H / R / O） | © 俯仰观照；免费使用、免费再分发，**禁止**包装成课程、付费 skills 或其他收费产品出售 |
-| 逐条 `source` | 全部 341 条 | 指回 `许可与来源.md` 与素材包里的原始 `.md`；UI 详情逐卡显示 |
+| 逐条 `source` | 全部 341 条 | 指回素材包里该卡片的原始 `.md`（UI 详情逐卡显示）；作者自述见 `许可与来源.md` |
 
 插件包自己的 `license` 字段是 **`SEE LICENSE IN LICENSE.md`**，**绝不写 MIT**（`plugin/package.json`）：
 `plugin/LICENSE.md` 分开说明「插件代码 = 仓库根 LICENSE 的 MIT」与「风格素材 = 上述三档」，并写明再分发时必须整套保留
@@ -140,7 +147,8 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
 
 **实测（2026-10-31，#26 从零）**：卸载 → 客户端模块图 82 条 / `dsh-style-cards` ABSENT / 资产路由 404；
 重装 → 83 条 / PRESENT / 路由 200。禁用 → 82 条 / ABSENT / 404；启用 → 83 条 / PRESENT / 200。
-页面视觉（入口、卡片墙、应用后新会话草稿、卸载后入口消失）按上面的「人眼」判据确认。
+页面视觉（入口出现、卡片墙可开、应用后新会话带草稿且未发送）已由用户按上面的「人眼」判据确认（2026-10-31）；
+禁用/卸载后的入口消失以客户端模块图 ABSENT 为准（模块不在图里，页面不会再挂载入口）。
 
 ## 热更（开发循环）
 

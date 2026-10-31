@@ -1,3 +1,5 @@
+> **历史记录（调研于 2026-10-30/31）：** 本文件是当时的原始研究笔记。其中 `/anim` 命令线、指令装配、闸门、播放器的路线已在 2026-10-31 二次重锚中退场（见 [`docs/adr/0001-carry-style-source-not-compiled.md`](../adr/0001-carry-style-source-not-compiled.md)）；当前实现以仓库 [README](../../README.md) 与 `docs/adr/` 为准。
+
 # Style constants (WIDTH / HEIGHT / DURATION / SEED) — measured extraction coverage over 341 style prompts
 
 Researched 2026-10-31 against **XiaoyeCodes/code-animation-prompts @ main** (`pushed_at` 2026-10-29T13:20:54Z).

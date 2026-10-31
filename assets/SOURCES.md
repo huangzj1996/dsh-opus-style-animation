@@ -1,6 +1,6 @@
 # 素材来源与许可
 
-本目录由 `scripts/build-assets.mjs` 从随仓的 `code-animation-341-styles-main/` 生成，勿手改。
+本目录由 `scripts/build-assets.mjs` 从素材包 `code-animation-341-styles-main/`（不入库）生成，勿手改。
 
 - 风格数：341（MIT 105 / free-share-no-sell 236）
 - 缩略图：193

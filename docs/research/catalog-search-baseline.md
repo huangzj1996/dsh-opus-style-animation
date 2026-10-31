@@ -1,3 +1,5 @@
+> **历史记录（调研于 2026-10-30/31）：** 本文件是当时的原始研究笔记。其中 `/anim` 命令线、指令装配、闸门、播放器的路线已在 2026-10-31 二次重锚中退场（见 [`docs/adr/0001-carry-style-source-not-compiled.md`](../adr/0001-carry-style-source-not-compiled.md)）；当前实现以仓库 [README](../../README.md) 与 `docs/adr/` 为准。
+
 # 目录检索基线 — what the two upstream searchers actually do, and what the 341 records support
 
 Researched 2026-10-31 against `XiaoyeCodes/code-animation-prompts@main` (tree `69ccbeaf0b821591a40936572c2f559d8f4cfb68`, catalog

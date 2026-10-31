@@ -1,3 +1,5 @@
+> **历史记录（调研于 2026-10-30/31）：** 本文件是当时的原始研究笔记。其中 `/anim` 命令线、指令装配、闸门、播放器的路线已在 2026-10-31 二次重锚中退场（见 [`docs/adr/0001-carry-style-source-not-compiled.md`](../adr/0001-carry-style-source-not-compiled.md)）；当前实现以仓库 [README](../../README.md) 与 `docs/adr/` 为准。
+
 # Opus 5.5 vs DeepSeek-V4.1-Flash on B6 — quality gap, prompt anatomy, render contract
 
 **Question.** For one and the same prompt, what does Opus 5.5 actually do that DeepSeek-V4.1-Flash does not — and what would a plugin have to enforce to reproduce it?

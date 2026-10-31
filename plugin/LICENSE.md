@@ -5,7 +5,7 @@ profile、**免费分发、不设付费层**。它同时包含两类内容，许
 
 ## 一、插件代码 —— MIT
 
-`src/`、`scripts/`、`build/` 与构建产物 `lib/` 是本仓库自己写的代码，适用仓库根目录
+`src/`、`scripts/` 与构建产物 `lib/` 是本仓库自己写的代码，适用仓库根目录
 [`LICENSE`](../LICENSE)（MIT，Copyright (c) 2026 huang）。
 
 ## 二、风格素材 —— 三档标注
@@ -22,6 +22,9 @@ profile、**免费分发、不设付费层**。它同时包含两类内容，许
 来源标注（再分发时必须保留）：
 
 > **来源：来自俯仰观照博主的动画画风整理**
+
+注意：`assets/LICENSES/NOTICE.md` 与 `许可与来源.md` 是素材包原文，文中「本仓库 / 根目录的 `LICENSE`」指
+**素材包**的自定义非商业许可（现位于 `assets/LICENSES/LICENSE`），不是本仓代码的 MIT `LICENSE`。
 
 ## 三、再分发约束
 

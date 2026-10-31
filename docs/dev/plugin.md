@@ -115,7 +115,7 @@ node scripts/verify-client-module.mjs dsh-style-cards
 
 # 启用：删掉上面两行
 
-# 卸载（依赖、bundles 项、junction 一起去掉）
+# 卸载（依赖与 bundles 项一起移除；junction 通常一起删掉，见下方已知边界）
 & 'D:\software\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop remove 'dsh-style-cards'
 ```
 

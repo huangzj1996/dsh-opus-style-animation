@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import type { LicenseId } from "../src/catalog/types";
 
 // 许可与来源也是本票的交付物（#26）。这里钉两件事：
 // 1) 包清单的 license 字段不冒充 MIT，包内许可说明覆盖三档署名；
@@ -12,7 +13,7 @@ const assetsRoot = path.join(repoRoot, "assets");
 const pkg = JSON.parse(readFileSync(path.join(pkgDir, "package.json"), "utf8")) as { license?: string };
 const index = JSON.parse(readFileSync(path.join(assetsRoot, "index.json"), "utf8")) as {
   source: { licenseFiles: readonly string[] };
-  styles: readonly { id: string; name: string; series: string; license: string; source: string }[];
+  styles: readonly { id: string; name: string; series: string; license: LicenseId; source: string }[];
 };
 const readAsset = (...parts: string[]) => readFileSync(path.join(assetsRoot, ...parts), "utf8");
 
@@ -113,7 +114,7 @@ describe("逐条来源表（assets/SOURCES.md）", () => {
 
   it("表头说明它是生成物（勿手改）并给出三档数量", () => {
     const text = readAsset("SOURCES.md");
-    expect(text).toContain("由 `scripts/build-assets.mjs` 从随仓的 `code-animation-341-styles-main/` 生成，勿手改");
+    expect(text).toContain("由 `scripts/build-assets.mjs` 从素材包 `code-animation-341-styles-main/`（不入库）生成，勿手改");
     expect(text).toContain("MIT 105 / free-share-no-sell 236");
     expect(text).toContain("许可原文见 `LICENSES/`");
   });

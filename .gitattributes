@@ -1,6 +1,8 @@
 # 资产由 scripts/build-assets.mjs 生成，重生成必须逐字节一致：
 # 强制 LF，禁止 autocrlf 在 checkout 时改写换行（否则 --check 会在新克隆上误报漂移）。
 assets/** text eol=lf
+# 静帧是二进制：上面的 text 规则会把 JPEG 里的 0D 0A 当换行改写，必须在提交前关掉。
+assets/stills/** binary
 
 # 素材包是第三方内容，保持原样
 code-animation-341-styles-main/** -text

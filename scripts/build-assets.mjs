@@ -77,7 +77,7 @@ function main() {
   for (const dir of seriesDirs) {
     const dirPath = path.join(PROMPTS, dir);
     const entries = fs.readdirSync(dirPath, { withFileTypes: true }).filter((e) => e.isFile());
-    const mdFiles = entries.filter((e) => e.name.toLowerCase().endsWith('.md')).map((e) => e.name);
+    const mdFiles = entries.filter((e) => e.name.toLowerCase().endsWith('.md')).map((e) => e.name).sort();
     const stillFiles = new Set(entries.filter((e) => e.name.toLowerCase().endsWith('.jpg')).map((e) => e.name));
     const rows = [];
     for (const mdFile of mdFiles) {
@@ -170,7 +170,7 @@ function main() {
   const sources = [
     '# 素材来源与许可',
     '',
-    '本目录由 `scripts/build-assets.mjs` 从随仓的 `code-animation-341-styles-main/` 生成，勿手改。',
+    '本目录由 `scripts/build-assets.mjs` 从素材包 `code-animation-341-styles-main/`（不入库）生成，勿手改。',
     '',
     `- 风格数：${counts.styles}（MIT ${counts.mit} / free-share-no-sell ${counts.freeShareNoSell}）`,
     `- 缩略图：${counts.stills}`,
@@ -206,6 +206,25 @@ function main() {
       const abs = path.join(OUT, relPath);
       if (!fs.existsSync(abs) || !fs.readFileSync(abs).equals(buf)) {
         console.error(`drift: ${relPath}`);
+        drift++;
+      }
+    }
+    // 输出目录只该有 writes 里的文件：手放的、删剩的、系统杂项（忽略）也算漂移。
+    const JUNK_FILES = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
+    const actual = [];
+    const walk = (dir) => {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (JUNK_FILES.has(entry.name)) continue;
+        const abs = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(abs);
+        else actual.push(rel(path.relative(OUT, abs)));
+      }
+    };
+    walk(OUT);
+    for (const relPath of actual) {
+      if (!writes.has(relPath)) {
+        console.error(`drift (unexpected): ${relPath}`);
         drift++;
       }
     }

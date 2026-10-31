@@ -1,3 +1,5 @@
+> **历史记录（调研于 2026-10-30/31）：** 本文件是当时的原始研究笔记。其中 `/anim` 命令线、指令装配、闸门、播放器的路线已在 2026-10-31 二次重锚中退场（见 [`docs/adr/0001-carry-style-source-not-compiled.md`](../adr/0001-carry-style-source-not-compiled.md)）；当前实现以仓库 [README](../../README.md) 与 `docs/adr/` 为准。
+
 # LeaferJS as a rendering backend — fit check for generated animations
 
 Researched 2026-10-30 against **leafer / leafer-ui 2.3.3** (npm `leafer-ui@2.3.3`, published 2026-10-30; the
