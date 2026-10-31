@@ -144,3 +144,13 @@ describe("#22 应用链路（详情 + 新会话草稿）", () => {
     expect(code).toContain("_公共函数.js");
   });
 });
+
+describe("#23 搜索与系列筛选", () => {
+  it("bundle 里带着检索索引与筛选条文案（运行期不联网、不读盘）", () => {
+    const code = readFileSync(bundlePath, "utf8");
+    expect(code).toContain("搜索风格");
+    expect(code).toContain("按系列筛选");
+    expect(code).toContain("没有匹配的风格");
+    expect(code).not.toMatch(/\bfetch\(/);
+  });
+});

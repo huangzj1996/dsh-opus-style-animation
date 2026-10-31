@@ -4,8 +4,10 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import { compareStyleIds, toggleCollapsed } from "../src/catalog/groups";
+import { EMPTY_FILTER, type CardFilter } from "../src/catalog/search";
 import { ASSET_INDEX } from "../src/data/asset-index.generated";
 import { CardWall } from "../src/client/card-wall";
+import { typeInto } from "./dom-test-helpers";
 
 // 卡片墙的 DOM seam：不测 React 内部状态与样式，只断言「用户能看见什么」——
 // 341 张卡都在、按系列分组、默认展开、组头能折叠、组内按 ID 数值序。
@@ -14,13 +16,16 @@ import { CardWall } from "../src/client/card-wall";
 const containers: HTMLElement[] = [];
 const roots: Root[] = [];
 
-/** 折叠态现在由外层持有；测试用同一套受控状态复现真实调用方的用法。 */
+/** 折叠态、搜索词与系列筛选都由外层持有；测试用同一套受控状态复现真实调用方的用法。 */
 function WallHarness(): React.ReactElement {
   const [collapsed, setCollapsed] = React.useState<ReadonlySet<string>>(() => new Set());
+  const [filter, setFilter] = React.useState<CardFilter>(EMPTY_FILTER);
   return React.createElement(CardWall, {
     onOpen: () => undefined,
     collapsed,
     onToggle: (seriesKey: string) => setCollapsed((previous) => toggleCollapsed(previous, seriesKey)),
+    filter,
+    onFilterChange: setFilter,
   });
 }
 
@@ -127,5 +132,103 @@ describe("卡片墙", () => {
     const container = await renderWall();
     expect(container.querySelector(".dsc-wall-summary")?.textContent).toBe("341 张风格 · 10 个系列");
     expect(container.querySelector(".dsc-wall")?.getAttribute("data-card-count")).toBe("341");
+  });
+});
+
+describe("搜索与系列筛选", () => {
+  it("搜索框输入关键词后只剩命中的卡：折纸只命中 K22，摘要与卡片数同步", async () => {
+    const container = await renderWall();
+    const input = container.querySelector<HTMLInputElement>('[data-role="search-input"]');
+    expect(input).not.toBeNull();
+    await typeInto(input!, "折纸");
+
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(1);
+    expect(container.querySelector(".dsc-card")?.getAttribute("data-card-id")).toBe("K22");
+    expect(container.querySelector(".dsc-wall")?.getAttribute("data-card-count")).toBe("1");
+    expect(container.querySelector(".dsc-wall-summary")?.textContent).toBe("匹配 1 张风格");
+  });
+
+  it("系列 chips：点 Z 只剩 Z 系列 15 张（按系列分组），点「全部」恢复 341 张", async () => {
+    const container = await renderWall();
+    await act(async () => {
+      container.querySelector('[data-series-filter="Z"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    const zCards = Array.from(container.querySelectorAll("[data-card-id]"));
+    expect(zCards).toHaveLength(15);
+    expect(zCards.every((card) => card.getAttribute("data-series") === "Z")).toBe(true);
+    expect(container.querySelectorAll(".dsc-series")).toHaveLength(1);
+    expect(container.querySelector('[data-series-filter="Z"]')?.getAttribute("aria-pressed")).toBe("true");
+
+    await act(async () => {
+      container.querySelector('[data-series-filter="all"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(341);
+    expect(container.querySelector('[data-series-filter="all"]')?.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("关键词与系列可叠加：霓虹 + R 系列 = 3 张，顺序沿用检索结果；清空搜索词后回到该系列全量", async () => {
+    const container = await renderWall();
+    const input = container.querySelector<HTMLInputElement>('[data-role="search-input"]')!;
+    await typeInto(input, "霓虹");
+    await act(async () => {
+      container.querySelector('[data-series-filter="R"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    const ids = Array.from(container.querySelectorAll("[data-card-id]")).map((card) =>
+      card.getAttribute("data-card-id"),
+    );
+    expect(ids).toEqual(["R1", "R7", "R6"]);
+    expect(container.querySelector(".dsc-wall-summary")?.textContent).toBe("匹配 3 张风格");
+
+    await typeInto(input, "");
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(7);
+    expect(container.querySelectorAll(".dsc-series")).toHaveLength(1);
+  });
+
+  it("无结果时显示无结果空态，而不是一面空白的卡片墙", async () => {
+    const container = await renderWall();
+    const input = container.querySelector<HTMLInputElement>('[data-role="search-input"]')!;
+    await typeInto(input, "zzzz不存在");
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(0);
+    expect(container.querySelectorAll(".dsc-series")).toHaveLength(0);
+    expect(container.querySelector('[data-role="empty-state"]')?.textContent).toContain("没有匹配");
+  });
+
+  it("有关键词时平铺成相关度列表：DOM 顺序就是 BM25 顺序，清空后恢复系列分组", async () => {
+    const container = await renderWall();
+    const input = container.querySelector<HTMLInputElement>('[data-role="search-input"]')!;
+    await typeInto(input, "霓虹 赛博");
+
+    const ids = Array.from(container.querySelectorAll("[data-card-id]")).map((card) =>
+      card.getAttribute("data-card-id"),
+    );
+    expect(ids).toHaveLength(13);
+    expect(container.querySelectorAll(".dsc-series")).toHaveLength(0);
+    expect(ids.slice(0, 3)).toEqual(["K34", "V8", "R6"]);
+    expect(container.querySelector(".dsc-wall-summary")?.textContent).toBe("匹配 13 张风格");
+
+    await typeInto(input, "");
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(341);
+    expect(container.querySelectorAll(".dsc-series")).toHaveLength(10);
+  });
+
+  it("没有关键词时系列筛选沿用折叠态：收起的组不会自己展开，点开组头能看到 15 张", async () => {
+    const container = await renderWall();
+    const zHead = container.querySelector<HTMLButtonElement>('[data-series="Z"] .dsc-series-head')!;
+    await act(async () => {
+      zHead.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(341 - 15);
+
+    await act(async () => {
+      container.querySelector('[data-series-filter="Z"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(0);
+    const collapsedHead = container.querySelector<HTMLButtonElement>('[data-series="Z"] .dsc-series-head')!;
+    expect(collapsedHead.getAttribute("aria-expanded")).toBe("false");
+
+    await act(async () => {
+      collapsedHead.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(15);
   });
 });

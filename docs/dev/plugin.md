@@ -132,7 +132,7 @@ pnpm --dir plugin test        # 先构建（含生成数据），再 vitest run
 资产漂移用 `pnpm check:assets`（即 `node scripts/build-assets.mjs --check`）判（需要素材包在场）。
 
 seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-data.test.ts` 全量逐字节 + 公共函数逐字）、
-卡片墙与详情 DOM（`test/card-wall.test.ts`、`test/panel.test.ts`，jsdom）、首帧基线（`test/render-baseline.test.ts`）、
+卡片墙（含搜索 / 系列筛选）与详情 DOM（`test/card-wall.test.ts`、`test/panel.test.ts`，jsdom）、检索打分（`test/search.test.ts`，纯函数）、首帧基线（`test/render-baseline.test.ts`）、
 纯状态机与浮层还原（`test/overlay-state.test.ts`）、草稿装配（`test/compose-draft.test.ts`）、
 许可署名（`test/attribution.test.ts`）、会话适配器（`test/apply-session.test.ts`）、
 构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、包清单（`test/package-manifest.test.ts`）。

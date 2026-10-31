@@ -29,18 +29,42 @@ export function compareStyleIds(a: string, b: string): number {
   return a < b ? -1 : 1;
 }
 
-/** 按索引里的系列顺序分组，组内按 ID 数值序。系列里没有卡片时也给一个空组。 */
-export function groupStyles(index: StyleAssetIndex): readonly SeriesGroup[] {
-  const bySeries = new Map<string, StyleAsset[]>();
-  for (const style of index.styles) {
-    const bucket = bySeries.get(style.series);
-    if (bucket === undefined) bySeries.set(style.series, [style]);
+/** 把卡片按系列 key 分桶；两个分组函数共用这一处骨架。 */
+function bucketBySeries(
+  index: StyleAssetIndex,
+  styles: readonly StyleAsset[],
+): ReadonlyMap<string, StyleAsset[]> {
+  const buckets = new Map<string, StyleAsset[]>();
+  for (const style of styles) {
+    const bucket = buckets.get(style.series);
+    if (bucket === undefined) buckets.set(style.series, [style]);
     else bucket.push(style);
   }
+  return buckets;
+}
+
+/** 按索引里的系列顺序分组，组内按 ID 数值序。系列里没有卡片时也给一个空组。 */
+export function groupStyles(index: StyleAssetIndex): readonly SeriesGroup[] {
+  const bySeries = bucketBySeries(index, index.styles);
   return index.series.map((series) => ({
     series,
     styles: (bySeries.get(series.key) ?? []).slice().sort((a, b) => compareStyleIds(a.id, b.id)),
   }));
+}
+
+/**
+ * 把筛选后的卡片按系列顺序分组：只保留有命中的组，组内保持传入顺序
+ * （空 query 是 ID 数字序，有关键词时是 BM25 的相关度序）。
+ */
+export function groupFilteredStyles(
+  index: StyleAssetIndex,
+  styles: readonly StyleAsset[],
+): readonly SeriesGroup[] {
+  const bySeries = bucketBySeries(index, styles);
+  return index.series.flatMap((series) => {
+    const inSeries = bySeries.get(series.key);
+    return inSeries === undefined ? [] : [{ series, styles: inSeries }];
+  });
 }
 
 /** 切换一个系列的折叠态：返回新的集合，不修改传入的集合。 */

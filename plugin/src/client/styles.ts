@@ -484,4 +484,83 @@ export const STYLE_CARDS_CSS = `
 @media (prefers-reduced-motion: reduce) {
   .dsc-toast { animation: none; }
 }
+
+/* —— #23 搜索与系列筛选 —— */
+.dsc-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dsc-search {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.35));
+  border-radius: var(--dsw-radius-md, 8px);
+  background: var(--dsw-alias-bg-layer-2, #ffffff);
+  color: var(--dsw-alias-label-primary, #111827);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+}
+.dsc-search::placeholder {
+  color: var(--dsw-alias-label-tertiary, #9ca3af);
+}
+.dsc-search:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+.dsc-series-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dsc-series-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--dsw-alias-border-l3, rgba(0, 0, 0, 0.08));
+  border-radius: 999px;
+  background: 0 0;
+  color: var(--dsw-alias-label-tertiary, #6b7280);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+.dsc-series-chip:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+}
+.dsc-series-chip:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+.dsc-series-chip[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--dsw-alias-button-primary-fill, #2563eb);
+  color: var(--dsw-alias-label-primary-foreground, #ffffff);
+}
+.dsc-wall-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 40px 12px;
+  text-align: center;
+}
+.dsc-wall-empty-title {
+  margin: 0;
+  color: var(--dsw-alias-label-primary, #111827);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.dsc-wall-empty-hint {
+  margin: 0;
+  color: var(--dsw-alias-label-tertiary, #6b7280);
+  font-size: 12.5px;
+  line-height: 20px;
+}
 `;

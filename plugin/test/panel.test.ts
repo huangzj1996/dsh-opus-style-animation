@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { ASSET_INDEX, SHARED_HELPERS } from "../src/data/asset-index.generated";
 import { StyleCardsPanel } from "../src/client/panel";
 import type { ApplyDraft } from "../src/client/apply-session";
+import { typeInto } from "./dom-test-helpers";
 
 // 详情 + 返回的 seam：用户在浮层里能看见什么、点完之后墙还在不在原处。
 // 不测 React 内部状态与样式；真实会话创建不在这一层（适配器 seam + 手工冒烟覆盖）。
@@ -44,16 +45,6 @@ async function click(element: Element | null): Promise<void> {
   expect(element).not.toBeNull();
   await act(async () => {
     element!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-  });
-}
-
-
-async function typeInto(input: HTMLInputElement, value: string): Promise<void> {
-  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-  expect(typeof setter).toBe("function");
-  await act(async () => {
-    setter!.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
 
@@ -172,5 +163,30 @@ describe("卡片详情与返回", () => {
     expect(agHeadAgain.getAttribute("aria-expanded")).toBe("false");
     expect(container.querySelectorAll(".dsc-card")).toHaveLength(341 - 26);
     expect(body.scrollTop).toBe(420);
+  });
+
+  it("先筛选再进详情：返回后筛选保留，应用仍带该卡原文草稿", async () => {
+    const drafts: string[] = [];
+    const container = renderPanel((draft) => {
+      drafts.push(draft);
+      return { ok: true };
+    });
+
+    const search = container.querySelector<HTMLInputElement>('[data-role="search-input"]');
+    expect(search).not.toBeNull();
+    await typeInto(search!, "霓虹");
+    await click(container.querySelector('[data-series-filter="R"]'));
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(3);
+
+    await click(container.querySelector('[data-card-id="R1"]'));
+    expect(container.querySelector(".dsc-detail-title")?.textContent).toBe("霓虹雨夜 · 电影感");
+    await click(container.querySelector(".dsc-apply"));
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0]).toContain(byId("R1").prompt);
+
+    await click(container.querySelector('[data-role="detail-back"]'));
+    expect(container.querySelectorAll(".dsc-card")).toHaveLength(3);
+    expect(container.querySelector<HTMLInputElement>('[data-role="search-input"]')?.value).toBe("霓虹");
+    expect(container.querySelector('[data-series-filter="R"]')?.getAttribute("aria-pressed")).toBe("true");
   });
 });
