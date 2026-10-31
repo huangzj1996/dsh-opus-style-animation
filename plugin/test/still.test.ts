@@ -3,7 +3,7 @@ import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { ASSET_INDEX } from "../src/data/asset-index.generated";
+import { ASSET_INDEX, ASSET_INDEX_SHA256 } from "../src/data/asset-index.generated";
 import type { StyleAsset } from "../src/catalog/types";
 import { StillImage } from "../src/client/still";
 import { StyleDetail } from "../src/client/detail";
@@ -42,7 +42,7 @@ describe("StillImage", () => {
   it("有静帧：img 懒加载、src 与索引 stillPath 对应", () => {
     const container = render(React.createElement(StillImage, { style: byId("A1"), className: "dsc-card-thumb" }));
     const img = container.querySelector("img");
-    expect(img?.getAttribute("src")).toBe("style-cards/stills/A1.jpg");
+    expect(img?.getAttribute("src")).toBe("style-cards/stills/A1.jpg?v=" + ASSET_INDEX_SHA256.slice(0, 12));
     expect(img?.getAttribute("loading")).toBe("lazy");
     expect(img?.getAttribute("decoding")).toBe("async");
     expect(img?.getAttribute("alt")).toBe("");
@@ -54,14 +54,22 @@ describe("StillImage", () => {
     expect(container.querySelector(".dsc-still-fallback")?.textContent).toBe("K12");
   });
 
-  it("加载失败：单张退化为占位，不影响其它卡", () => {
-    const container = render(React.createElement(StillImage, { style: byId("A1"), className: "dsc-card-thumb" }));
-    const img = container.querySelector("img");
-    expect(img).not.toBeNull();
+  it("加载失败：只把这一张退化为占位，不影响其它卡", () => {
+    const container = render(
+      React.createElement(
+        "div",
+        null,
+        React.createElement(StillImage, { style: byId("A1"), className: "dsc-card-thumb" }),
+        React.createElement(StillImage, { style: byId("L4"), className: "dsc-card-thumb" }),
+      ),
+    );
+    const images = Array.from(container.querySelectorAll("img"));
+    expect(images).toHaveLength(2);
     act(() => {
-      img!.dispatchEvent(new Event("error"));
+      images[0]!.dispatchEvent(new Event("error"));
     });
-    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelectorAll("img")).toHaveLength(1);
+    expect(container.querySelector("img")?.getAttribute("src")).toContain("stills/L4.jpg");
     expect(container.querySelector(".dsc-still-fallback")?.textContent).toBe("A1");
   });
 });
@@ -79,7 +87,7 @@ describe("详情大图", () => {
       }),
     );
     const image = container.querySelector('[data-role="detail-still"] img');
-    expect(image?.getAttribute("src")).toBe("style-cards/stills/A1.jpg");
+    expect(image?.getAttribute("src")).toBe("style-cards/stills/A1.jpg?v=" + ASSET_INDEX_SHA256.slice(0, 12));
     expect(image?.getAttribute("loading")).toBe("lazy");
   });
 

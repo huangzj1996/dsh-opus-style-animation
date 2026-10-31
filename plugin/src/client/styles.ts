@@ -250,11 +250,14 @@ export const STYLE_CARDS_CSS = `
   object-fit: cover;
 }
 .dsc-still-fallback {
+  padding: 2px 8px;
+  border-radius: var(--dsw-radius-sm, 4px);
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.42));
+  color: var(--dsw-alias-label-primary-foreground, #ffffff);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--dsw-alias-label-primary-foreground, #ffffff);
 }
 /* 系列占位色是内容色（10 个系列各一档），不是宿主主题色；集中在这里，
    卡片组件不再带内联背景样式。 */

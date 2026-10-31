@@ -6,6 +6,7 @@
  */
 import * as React from "react";
 import type { StyleAsset } from "../catalog/types";
+import { ASSET_INDEX_SHA256 } from "../data/asset-index.generated";
 import { stillUrl } from "../shared/stills";
 
 export interface StillImageProps {
@@ -18,7 +19,7 @@ export interface StillImageProps {
 
 export function StillImage(props: StillImageProps): React.ReactElement {
   const [failed, setFailed] = React.useState(false);
-  const url = stillUrl(props.style.stillPath);
+  const url = stillUrl(props.style.stillPath, ASSET_INDEX_SHA256);
   const showImage = url !== null && !failed;
   const fallback = props.fallback === undefined ? "id" : props.fallback;
   return React.createElement(

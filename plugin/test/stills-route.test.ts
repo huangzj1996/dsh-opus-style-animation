@@ -1,4 +1,4 @@
-import { createServer } from "node:http";
+import { createServer, request } from "node:http";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -61,6 +61,7 @@ describe("resolveStillAsset", () => {
 describe("createStillsRoute（真实 HTTP 请求）", () => {
   let close: () => Promise<void>;
   let baseUrl: string;
+  let port: number;
 
   beforeAll(async () => {
     const route = createStillsRoute({ stillsDir: path.join(root, "stills") });
@@ -74,6 +75,7 @@ describe("createStillsRoute（真实 HTTP 请求）", () => {
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
     const address = server.address();
     if (address === null || typeof address === "string") throw new Error("no address");
+    port = address.port;
     baseUrl = "http://127.0.0.1:" + address.port;
     close = () => new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -103,5 +105,35 @@ describe("createStillsRoute（真实 HTTP 请求）", () => {
     const post = await fetch(baseUrl + "/style-cards/stills/A1.jpg", { method: "POST" });
     expect(post.status).toBe(405);
     expect(post.headers.get("allow")).toBe("GET, HEAD");
+  });
+
+  /** 绕过 fetch 的 URL 归一化，按原始 path 发请求，验证真实服务端上的穿越处理。 */
+  function rawRequest(rawPath: string): Promise<{ status: number; body: string }> {
+    return new Promise((resolve, reject) => {
+      const req = request({ host: "127.0.0.1", port, path: rawPath, method: "GET" }, (res) => {
+        let body = "";
+        res.setEncoding("utf8");
+        res.on("data", (chunk: string) => (body += chunk));
+        res.on("end", () => resolve({ status: res.statusCode ?? 0, body }));
+      });
+      req.on("error", reject);
+      req.end();
+    });
+  }
+
+  it("真实请求上的穿越/绝对路径不泄露文件；带版本查询串仍 200", async () => {
+    const encoded = await rawRequest("/style-cards/stills/%2e%2e%2f%2e%2e%2fLICENSES%2fLICENSE");
+    expect([403, 404]).toContain(encoded.status);
+    expect(encoded.body).not.toContain("LICENSE-TEXT");
+
+    const dotted = await rawRequest("/style-cards/stills/../LICENSES/LICENSE");
+    expect([403, 404]).toContain(dotted.status);
+    expect(dotted.body).not.toContain("LICENSE-TEXT");
+
+    const absolute = await rawRequest("/etc/passwd");
+    expect(absolute.status).toBe(404);
+
+    const versioned = await rawRequest("/style-cards/stills/A1.jpg?v=abc123abc123");
+    expect(versioned.status).toBe(200);
   });
 });

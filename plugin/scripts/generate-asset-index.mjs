@@ -183,6 +183,9 @@ export function renderAssetIndexModule(index, indexSha256, sharedHelpers) {
     body +
     "\n];\n" +
     "\n" +
+    "/** 资产索引 sha256：客户端给缩略图 URL 加 ?v=<前 12 位>，插件升级换图后浏览器不会命中旧缓存。 */\n" +
+    "export const ASSET_INDEX_SHA256: string = " + JSON.stringify(indexSha256) + ";\n" +
+    "\n" +
     "/** 代码样片卡片共用、应用时内联进草稿的 _公共函数.js 原文（逐字）。 */\n" +
     "export const SHARED_HELPERS: string = " + JSON.stringify(sharedHelpers) + ";\n" +
     "\n" +
