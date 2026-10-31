@@ -71,6 +71,10 @@ function assertClientArtifact(text) {
   if (!text.includes("字雨") || !text.includes("延时摄影交响")) {
     throw new Error("client 产物里没有内置卡片数据（A1 / L4），检查 generate-asset-index 是否跑在了打包之前");
   }
+  // 应用代码样片时必须内联公共函数；漏了它参考实现里的 rng/clamp/vgrad 会未定义。
+  if (!text.includes("function rng(seed)")) {
+    throw new Error("client 产物里没有 _公共函数.js 原文，检查 assets/shared 与 generate-asset-index");
+  }
 }
 
 /** 校验并落盘浏览器半边；一次性构建与 watch 共用这一条写路径。 */

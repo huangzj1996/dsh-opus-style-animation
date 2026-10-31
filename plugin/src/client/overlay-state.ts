@@ -6,12 +6,14 @@
  * - close-click：点浮层里的关闭按钮。
  * - backdrop-click：点浮层外的遮罩。
  * - escape-pressed：按 ESC。
+ * - apply-succeeded：点「应用」且新会话已打开；浮层收起，交给轻提示说明结果。
  */
 export type OverlayEvent =
   | "entry-click"
   | "close-click"
   | "backdrop-click"
-  | "escape-pressed";
+  | "escape-pressed"
+  | "apply-succeeded";
 
 /** 浮层状态。目前只有开/关两态；卡片墙的选中卡、搜索词留给 #21/#22，不塞进这里。 */
 export interface OverlayState {

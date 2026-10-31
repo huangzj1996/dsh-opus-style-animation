@@ -2,11 +2,12 @@
  * 构建期资产索引生成：把已提交的 `assets/index.json` 序列化成客户端用的 TS 模块。
  *
  * 单一真相是 `assets/index.json`（由仓库根的 `scripts/build-assets.mjs` 从素材包确定性生成，
- * 内联 341 份 md 原文 + 元数据 + 许可 + 静帧路径）。这里**不解析 md、不读素材包**，只做
- * 「JSON → TS 模块」的序列化，这样新克隆只要有 `assets/` 就能构建，不会和资产生成器各解析一遍。
+ * 内联 341 份 md 原文 + 元数据 + 许可 + 静帧路径）；代码样片共用的 `assets/shared/_公共函数.js`
+ * 也逐字内联成常量（应用时附进草稿，见 ADR-0002）。这里**不解析 md、不读素材包**，只做
+ * 「资产文件 → TS 模块」的序列化，这样新克隆只要有 `assets/` 就能构建，不会和资产生成器各解析一遍。
  *
  * 用法：
- *   node scripts/generate-asset-index.mjs                    # 默认读 <repo>/assets/index.json
+ *   node scripts/generate-asset-index.mjs                    # 默认读 <repo>/assets/index.json 与 assets/shared/_公共函数.js
  *   DSC_ASSET_INDEX=<path> node scripts/generate-asset-index.mjs
  *
  * 构建脚本（scripts/build.mjs）会在打包前调用这里的 `generateAssetIndex()`。
@@ -19,6 +20,7 @@ import { fileURLToPath } from "node:url";
 const PKG_DIR = path.resolve(import.meta.dirname, "..");
 const REPO_ROOT = path.resolve(PKG_DIR, "..");
 const DEFAULT_INDEX_FILE = path.join(REPO_ROOT, "assets", "index.json");
+const DEFAULT_SHARED_HELPERS_FILE = path.join(REPO_ROOT, "assets", "shared", "_公共函数.js");
 const GENERATED_FILE = path.join(PKG_DIR, "src", "data", "asset-index.generated.ts");
 
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
@@ -141,8 +143,27 @@ export function readAssetIndex(indexFile = DEFAULT_INDEX_FILE) {
   return { index, raw };
 }
 
-/** 把索引渲染成 TS 模块：一段 JSON 字符串 + JSON.parse，避免 tsc 去推导 1.5 MB 的字面量类型。 */
-export function renderAssetIndexModule(index, indexSha256) {
+/**
+ * 读代码样片共用的 _公共函数.js（已提交的 assets/shared/_公共函数.js）。
+ * 它随资产包一起提交；应用代码样片时必须逐字内联进草稿，否则 rng / clamp / vgrad 未定义。
+ */
+export function readSharedHelpers(file = DEFAULT_SHARED_HELPERS_FILE) {
+  if (!fs.existsSync(file)) {
+    throw new Error(
+      "找不到公共函数原文：" + file + "\n" +
+        "插件构建依赖已提交的 assets/shared/_公共函数.js；如果它缺失，先跑 node scripts/build-assets.mjs 重新生成。",
+    );
+  }
+  const sharedHelpers = fs.readFileSync(file, "utf8");
+  if (sharedHelpers.trim() === "") throw new Error("公共函数原文是空文件：" + file);
+  return sharedHelpers;
+}
+
+/**
+ * 把索引渲染成 TS 模块：一段 JSON 字符串 + JSON.parse，避免 tsc 去推导 1.5 MB 的字面量类型。
+ * 共享函数原文以普通 JSON 字符串常量输出（2.6 KB，逐字保留）。
+ */
+export function renderAssetIndexModule(index, indexSha256, sharedHelpers) {
   const json = JSON.stringify(index);
   const chunkSize = 8192;
   /** @type {string[]} */
@@ -162,6 +183,9 @@ export function renderAssetIndexModule(index, indexSha256) {
     body +
     "\n];\n" +
     "\n" +
+    "/** 代码样片卡片共用、应用时内联进草稿的 _公共函数.js 原文（逐字）。 */\n" +
+    "export const SHARED_HELPERS: string = " + JSON.stringify(sharedHelpers) + ";\n" +
+    "\n" +
     "const parseStartedAt = readClock();\n" +
     "/** 341 条风格资产（索引 + 逐字 md 原文）；只读内存，不读文件系统、不联网。 */\n" +
     'export const ASSET_INDEX: StyleAssetIndex = JSON.parse(CHUNKS.join(""));\n' +
@@ -172,7 +196,7 @@ export function renderAssetIndexModule(index, indexSha256) {
 
 /**
  * 生成并写盘。内容没变化时不动文件，避免 HMR 空转与无意义的 mtime 变化。
- * @param {{ indexFile?: string, outFile?: string, log?: (message: string) => void }} [options]
+ * @param {{ indexFile?: string, sharedHelpersFile?: string, outFile?: string, log?: (message: string) => void }} [options]
  */
 export async function generateAssetIndex(options = {}) {
   const startedAt = Date.now();
@@ -180,7 +204,8 @@ export async function generateAssetIndex(options = {}) {
   const log = options.log ?? ((message) => console.log(message));
   const { index, raw } = readAssetIndex(options.indexFile);
   const indexSha256 = sha256(raw);
-  const source = renderAssetIndexModule(index, indexSha256);
+  const sharedHelpers = readSharedHelpers(options.sharedHelpersFile);
+  const source = renderAssetIndexModule(index, indexSha256, sharedHelpers);
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
 
   let changed = true;
@@ -194,9 +219,10 @@ export async function generateAssetIndex(options = {}) {
       path.relative(PKG_DIR, outFile) +
       "：" + index.counts.styles + " 张卡片、" + Buffer.byteLength(source) + " B、" +
       (Date.now() - startedAt) + " ms" +
-      (changed ? "" : "（内容一致，跳过写盘）"),
+      (changed ? "" : "（内容一致，跳过写盘）") +
+      "、公共函数 " + Buffer.byteLength(sharedHelpers) + " B",
   );
-  return { index, changed, bytes: Buffer.byteLength(source), outFile, indexSha256 };
+  return { index, changed, bytes: Buffer.byteLength(source), outFile, indexSha256, sharedHelpersBytes: Buffer.byteLength(sharedHelpers) };
 }
 
 const isMain =

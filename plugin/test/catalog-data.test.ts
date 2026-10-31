@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { compareStyleIds, groupStyles } from "../src/catalog/groups";
-import { ASSET_INDEX } from "../src/data/asset-index.generated";
+import { ASSET_INDEX, SHARED_HELPERS } from "../src/data/asset-index.generated";
 
 // 构建期序列化的资产索引是这张票的交付物：341 张一张不漏、原文逐字一致、字段齐全、系列与许可对得上。
 // 这里读已提交的 assets/styles/*.md 做独立参照，而不是拿索引自己的哈希自证。
@@ -123,5 +123,23 @@ describe("内置资产索引（构建期序列化）", () => {
     expect(compareStyleIds("L2", "L10")).toBeLessThan(0);
     expect(compareStyleIds("O9", "O10")).toBeLessThan(0);
     expect(compareStyleIds("A2", "B1")).toBeLessThan(0);
+  });
+});
+
+describe("公共函数原文（应用代码样片时内联进草稿）", () => {
+  it("与 assets/shared/_公共函数.js 逐字节一致，rng / clamp / vgrad 都在", () => {
+    const source = readFileSync(path.join(assetsRoot, "shared", "_公共函数.js"), "utf8");
+    expect(SHARED_HELPERS).toBe(source);
+    expect(Buffer.byteLength(SHARED_HELPERS, "utf8")).toBe(2602);
+    expect(SHARED_HELPERS).toContain("function rng(seed)");
+    expect(SHARED_HELPERS).toContain("function vgrad(ctx, h, c1, c2)");
+    expect(SHARED_HELPERS).not.toMatch(/\r\n/);
+  });
+
+  it("hasSharedHelpers 恰好覆盖 25 张代码样片，其他卡片不带", () => {
+    const withHelpers = ASSET_INDEX.styles.filter((style) => style.hasSharedHelpers);
+    expect(withHelpers).toHaveLength(25);
+    expect(withHelpers.every((style) => style.payloadKind === "code-sample")).toBe(true);
+    expect(ASSET_INDEX.styles.filter((style) => style.payloadKind === "code-sample")).toHaveLength(25);
   });
 });

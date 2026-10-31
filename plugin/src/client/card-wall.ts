@@ -1,10 +1,8 @@
 /**
  * 卡片墙：把内置的 341 张风格卡按系列铺进浮层。
  *
- * 这一票（#21）只做「都在、都能看见」：每张卡只有 ID + 名称 + 占位块，
- * 不做缩略图、不做搜索、不做详情——那些留给后面的票。
- *
- * 数据来自构建期序列化的 `src/data/asset-index.generated.ts`（源头是已提交的 `assets/index.json`）；
+ * #21 交付了「都在、都能看见」；#22 把每张卡变成可点的入口（点开详情）。
+ * 数据来自构建期序列化的 src/data/asset-index.generated.ts（源头是已提交的 assets/index.json）；
  * 运行期只读内存。分组、数值序、折叠都是纯函数（src/catalog/groups.ts），这里只负责画。
  */
 import * as React from "react";
@@ -14,24 +12,26 @@ import type { SeriesGroup, StyleAsset } from "../catalog/types";
 import { ASSET_INDEX, ASSET_INDEX_PARSE_MS } from "../data/asset-index.generated";
 import { recordRenderBaseline, type RenderBaseline } from "./render-baseline";
 
-/** 一张卡：占位块 + ID + 名称。没有名字的空卡显示统一的兜底文案。 */
-function StyleCardTile(style: StyleAsset): React.ReactElement {
+/** 一张卡：占位块 + ID + 名称，整张卡是一个按钮（点开详情）。没有名字的空卡显示统一的兜底文案。 */
+function StyleCardTile(style: StyleAsset, onOpen: (style: StyleAsset) => void): React.ReactElement {
   const label = styleLabel(style);
   return React.createElement(
-    "article",
+    "button",
     {
       key: style.id,
+      type: "button",
       className: "dsc-card",
       "data-card-id": style.id,
       "data-series": style.series,
-      "aria-label": style.id + " " + label,
+      "aria-label": style.id + " " + label + "，查看详情",
+      onClick: () => onOpen(style),
     },
-    React.createElement("div", {
+    React.createElement("span", {
       className: "dsc-card-thumb",
       "aria-hidden": "true",
     }),
     React.createElement(
-      "div",
+      "span",
       { className: "dsc-card-meta" },
       React.createElement("span", { className: "dsc-card-id" }, style.id),
       React.createElement(
@@ -51,8 +51,9 @@ const SeriesSection = React.memo(function SeriesSection(props: {
   readonly group: SeriesGroup;
   readonly collapsed: boolean;
   readonly onToggle: (seriesKey: string) => void;
+  readonly onOpen: (style: StyleAsset) => void;
 }): React.ReactElement {
-  const { group, collapsed, onToggle } = props;
+  const { group, collapsed, onToggle, onOpen } = props;
   const key = group.series.key;
   const cardsId = "dsc-series-cards-" + key;
   return React.createElement(
@@ -80,13 +81,18 @@ const SeriesSection = React.memo(function SeriesSection(props: {
       : React.createElement(
           "div",
           { id: cardsId, className: "dsc-cards" },
-          group.styles.map((style) => StyleCardTile(style)),
+          group.styles.map((style) => StyleCardTile(style, onOpen)),
         ),
   );
 });
 
-/** 卡片墙根组件。只在浮层打开时挂载，避免关着的时候白渲染 341 张卡。 */
-export function CardWall(): React.ReactElement {
+export interface CardWallProps {
+  /** 点任意一张卡：把这张风格资产交给详情视图。 */
+  readonly onOpen: (style: StyleAsset) => void;
+}
+
+/** 卡片墙根组件。只在浮层打开、且没进详情时挂载。 */
+export function CardWall(props: CardWallProps): React.ReactElement {
   // 基线从分组开始之前起算：341 张卡的分组 + 元素树 + 提交都算在「一次渲染」里。
   const [renderStartedAt] = React.useState(() => readClock());
   const groups = React.useMemo(() => groupStyles(ASSET_INDEX), []);
@@ -161,6 +167,7 @@ export function CardWall(): React.ReactElement {
         group,
         collapsed: collapsed.has(group.series.key),
         onToggle,
+        onOpen: props.onOpen,
       }),
     ),
   );

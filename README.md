@@ -3,15 +3,17 @@
 把 341 份预置的「代码动画风格」做成 DSH 左侧栏底部的 **Opus 片场** 入口：点开挑一张风格卡片，就在新会话里按那种风格开工。
 
 状态：施工中。规格 [#19](https://github.com/huangzj1996/dsh-opus-style-animation/issues/19)，实施票 #20（插件壳）/ #21（卡片墙）/ #22（详情 + 应用）。
-当前已交付 **#20 插件壳** 与 **#21 卡片墙**：侧栏底部一行「Opus 片场」；点开浮层里是 341 张风格卡，
-按 10 个系列平铺、组头可折叠、可滚动。每张卡只有 ID + 名称 + 占位块——缩略图、搜索、详情、应用留给 #22。
+当前已交付 **#20 插件壳**、**#21 卡片墙** 与 **#22 详情 + 应用**：侧栏底部一行「Opus 片场」；点开浮层里是 341 张风格卡，
+按 10 个系列平铺、组头可折叠、可滚动。点任意卡片进详情（许可三档署名 + 风格原文全文 + 可选主题），
+点「应用」会在当前/最近工作区打开新会话并把草稿填进输入框（不自动发送），浮层关闭并给一条轻提示。
+缩略图与搜索/系列筛选留给 #24 / #23。
 
 ## 仓库结构
 
 | 路径 | 是什么 |
 |---|---|
 | `plugin/` | DSH 客户端插件包 `dsh-style-cards`（宿主半边 no-op + 浏览器半边） |
-| `plugin/src/data/asset-index.generated.ts` | 构建期从 `assets/index.json` 序列化出的资产索引（gitignore，`pnpm generate` 生成） |
+| `plugin/src/data/asset-index.generated.ts` | 构建期从 `assets/index.json` + `assets/shared/_公共函数.js` 序列化出的资产索引（gitignore，`pnpm generate` 生成） |
 | `assets/` | 已提交的风格资产：`index.json`（341 份 md 原文 + 元数据）、`styles/`、`stills/`、`LICENSES/`；由 `scripts/build-assets.mjs` 生成 |
 | `docs/` | 研究、ADR、agent 文档；插件契约与开发循环见 [`docs/dev/plugin.md`](docs/dev/plugin.md) |
 | `code-animation-341-styles-main/` | 上游素材包（gitignore，只在本机用于重生成/校验 `assets/`） |
@@ -33,7 +35,8 @@ pnpm typecheck      # 生成资产索引 + tsc --noEmit
 pnpm build          # 生成资产索引 + lib/client.js + lib/index.js
 ```
 
-构建只依赖已提交的 `assets/`，新克隆不需要素材包。素材包只用于重生成/校验资产：
+构建只依赖已提交的 `assets/`，新克隆不需要素材包。生成的模块里同时逐字内联了代码样片共用的
+`assets/shared/_公共函数.js`（应用 A–G 代码样片时附进草稿）。素材包只用于重生成/校验资产：
 `node scripts/build-assets.mjs` 重新生成 `assets/`，`node scripts/build-assets.mjs --check` 校验漂移。
 生成的资产索引模块与 `plugin/lib/` 一样是构建产物，不入库。
 
@@ -84,6 +87,20 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
   `catalog-data.test.ts` 断言 341 张、10 组、193 张带静帧、许可分档，并把 341 份内置原文与 `assets/styles/*.md`
   **逐字节**对比；`card-wall.test.ts` 在 jsdom 里渲染出 341 张卡并验证折叠。
 
+## 详情与应用（#22）
+
+- **详情**：点任意卡片进入。显示名称、三档许可署名（徽标 + 版权人 + 一句话条款 + 逐条来源）、
+  assets/index.json 里 prompt 的**全文**（只读、逐字）、可选「主题」输入与「应用」按钮；
+- **返回**：详情里点「← 返回卡片墙」回到卡片墙，并恢复进详情前的滚动位置。
+- **草稿**：composeDraft（纯函数）拼一行任务说明（含产物路径 animations/<时间戳>-<ID>-<名称>/index.html）
+  + 主题（非空时一行）+ 风格原文（逐字）；代码样片（索引 hasSharedHelpers: true，25 张）再追加
+  _公共函数.js 全文，保证参考实现里的 rng / clamp / vgrad 可直接跑。块之间只留一个空行。
+- **应用**：uiWorkspace.startSession(undefined, { prompt, clearPreviousDraft: true })——在当前/最近工作区
+  开新会话并把草稿填进输入框，**不自动发送**；成功后浮层关闭并出现轻提示「已带入草稿，可编辑后发送」。
+  拿不到服务或同步失败时，详情里显示可读错误、浮层保持打开（不吞错）。
+- **外部 bundle 的 uiWorkspace 注入**：客户端插件上下文用 ctx.get('uiWorkspace') 做可选查找；
+  本票在真机上做了一次「点卡 → 应用」的端到端冒烟取证（见票 #22）。
+
 ## 无屏验证
 
 `/plugins/events` 不需要认证，可以直接读运行中的客户端模块图：
@@ -111,7 +128,7 @@ node scripts/verify-client-module.mjs dsh-style-cards
 
 ## 测试
 
-`plugin/test/` 七个文件 33 条：
+`plugin/test/` 十二个文件（#22 后）：
 
 - `asset-index.test.ts` — 四类真实样本的索引读取（A1 代码样片、L4 11 节英文规约、H10 一句话、M14 空卡）；
 - `catalog-data.test.ts` — 与 `assets/index.json` 完全一致、341 张 / 10 系列 / 193 张带静帧 / 9 张空卡、字段与许可分档，以及 341 份内置原文与
@@ -120,6 +137,11 @@ node scripts/verify-client-module.mjs dsh-style-cards
 - `render-baseline.test.ts` — 首帧基线的记录点；
 - `overlay-state.test.ts` — 浮层开/关状态机（入口点按切换、关闭按钮 / 点遮罩 / ESC 关闭、关着时 ESC 无事发生、关掉还能再开）；
 - `client-bundle.test.ts` — 构建产物方言、`apply` 模拟宿主上下文、内置数据与「不读盘 / 不联网」；
-- `package-manifest.test.ts` — `dsh.bundle.patch` / `dsh.client` / 展示元数据 / 图标齐全。
+- `package-manifest.test.ts` — `dsh.bundle.patch` / `dsh.client` / 展示元数据 / 图标齐全；
+- `compose-draft.test.ts` — 草稿文本 golden：空/有主题、路径形状、原文逐字、代码样片内联公共函数、块间只留一个空行；
+- `attribution.test.ts` — 三档许可署名（free-share-no-sell © 俯仰观照；MIT 的 L/V/X 各自版权人；逐条来源）；
+- `apply-session.test.ts` — 适配器断言 startSession(undefined, { prompt, clearPreviousDraft: true })，失败返回可读错误；
+- `panel.test.ts` — jsdom：点卡片进详情、返回恢复滚动位置、应用草稿含主题/公共函数、失败时错误留在详情里。
 
-视觉、缩略图加载、真实会话创建按规格留给手工冒烟（规格 #19 的 Testing Decisions）。
+浮层的真实视觉、缩略图加载、真实会话创建按规格留给手工冒烟（规格 #19 的 Testing Decisions）；
+#22 的端到端路径已用一次真机冒烟（点卡 → 详情 → 应用 → 新会话输入框里有草稿）取证。

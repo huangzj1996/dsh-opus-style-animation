@@ -123,20 +123,26 @@ pnpm --dir plugin test        # 先构建（含生成数据），再 vitest run
 ```
 
 `pnpm build` 会先跑 `scripts/generate-asset-index.mjs`：读**已提交**的 `assets/index.json`（由仓库根的
-`scripts/build-assets.mjs` 从素材包生成，内联 341 份 md 原文），只做「JSON → TS 模块」的序列化，
-产出 `src/data/asset-index.generated.ts`（约 1.7 MB；构建产物，gitignore）。它不再解析 md、不依赖素材包在场；
-新克隆只要有 `assets/` 就能构建。`DSC_ASSET_INDEX=<path>` 可指向别的索引文件。浏览器 bundle 因此从 #20 的
-~11 KB 涨到 ~1.5 MB——这是 341 份原文内置的代价，运行期只 `JSON.parse` 一次、不读盘、不联网。
+`scripts/build-assets.mjs` 从素材包生成，内联 341 份 md 原文）与 `assets/shared/_公共函数.js`，只做
+「资产文件 → TS 模块」的序列化，产出 `src/data/asset-index.generated.ts`（约 1.7 MB；构建产物，gitignore）。
+它不解析 md、不依赖素材包在场；新克隆只要有 `assets/` 就能构建。`DSC_ASSET_INDEX=<path>` 可指向别的索引文件。
+浏览器 bundle 因此从 #20 的 ~11 KB 涨到 ~1.48 MB——这是 341 份原文 + 公共函数内置的代价，运行期只
+`JSON.parse` 一次、不读盘、不联网。应用 A–G 代码样片时，草稿末尾会附上这份 `_公共函数.js` 全文（逐字）。
 资产漂移用 `pnpm check:assets`（即 `node scripts/build-assets.mjs --check`）判（需要素材包在场）。
 
-seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-data.test.ts` 全量逐字节）、
-卡片墙 DOM（`test/card-wall.test.ts`，jsdom）、首帧基线（`test/render-baseline.test.ts`）、
-纯状态机（`src/client/overlay-state.ts`）、构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、
-包清单（`test/package-manifest.test.ts`）。
+seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-data.test.ts` 全量逐字节 + 公共函数逐字）、
+卡片墙与详情 DOM（`test/card-wall.test.ts`、`test/panel.test.ts`，jsdom）、首帧基线（`test/render-baseline.test.ts`）、
+纯状态机与浮层还原（`test/overlay-state.test.ts`）、草稿装配（`test/compose-draft.test.ts`）、
+许可署名（`test/attribution.test.ts`）、会话适配器（`test/apply-session.test.ts`）、
+构建产物方言与 `apply` 行为（`test/client-bundle.test.ts`）、包清单（`test/package-manifest.test.ts`）。
 
 ## 7. 已知边界
 
 - 浮层在 `overlayLayer`（`z-index:20`）这个层叠上下文里，压不过宿主的 settings 全屏层（`z-index:1000`）；实际使用中碰不到。
+- **uiWorkspace 取法**：外部 bundle 的客户端上下文用 `ctx.get('uiWorkspace')` 做可选查找（不写进 `inject`，
+  这样服务缺席时插件界面仍能打开，只有点「应用」时给可读错误）。拿到的服务调用
+  `startSession(undefined, { prompt, clearPreviousDraft: true })`；宿主的异步失败（`draft.workspaceRequired` /
+  `draft.initializationFailed`）由宿主自己弹 notice，适配器只兜「取服务失败 / 同步抛错」。
 - `shell.overlay` 条目没有 owner props，也就拿不到宿主 locale；当前文案「Opus 片场」是写死的中文（v1 中文界面，符合规格）。
 - 图标没有可复用的宿主图标包（禁止 import `client-ui-primitives`），全部用内联 SVG。
 - 卡片墙的系列占位色是**内容色**（10 个系列各一档，写在 `styles.ts` 的 `.dsc-card[data-series=…]` 里），

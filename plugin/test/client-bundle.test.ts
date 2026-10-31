@@ -97,6 +97,7 @@ describe("浏览器半边在宿主里跑起来", () => {
           registeredEntries.push(options.id);
         },
       },
+      get: (name: string) => (name === "uiWorkspace" ? { startSession: () => undefined } : undefined),
       effect: (setup: () => void | (() => void)) => {
         const cleanup = setup();
         if (typeof cleanup === "function") disposers.push(cleanup);
@@ -129,5 +130,17 @@ describe("内置资产索引", () => {
     expect(code).not.toContain("readFileSync");
     expect(code).not.toContain("XMLHttpRequest");
     expect(code).not.toMatch(/\bfetch\(/);
+  });
+});
+
+describe("#22 应用链路（详情 + 新会话草稿）", () => {
+  it("bundle 里带着 uiWorkspace 适配器、startSession 参数与公共函数全文", () => {
+    const code = readFileSync(bundlePath, "utf8");
+    expect(code).toContain("uiWorkspace");
+    expect(code).toContain("startSession");
+    expect(code).toContain("clearPreviousDraft");
+    expect(code).toContain("已带入草稿，可编辑后发送");
+    expect(code).toContain("function rng(seed)");
+    expect(code).toContain("_公共函数.js");
   });
 });

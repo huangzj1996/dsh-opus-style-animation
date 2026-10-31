@@ -36,6 +36,11 @@ describe("浮层开关状态", () => {
     expect(overlayReducer(CLOSED_OVERLAY, "escape-pressed").open).toBe(false);
   });
 
+  it("应用成功后浮层收起（轻提示由外层负责）", () => {
+    const opened = overlayReducer(CLOSED_OVERLAY, "entry-click");
+    expect(overlayReducer(opened, "apply-succeeded")).toEqual(CLOSED_OVERLAY);
+  });
+
   it("关掉之后还能再打开", () => {
     const opened = overlayReducer(CLOSED_OVERLAY, "entry-click");
     const closed = overlayReducer(opened, "escape-pressed");

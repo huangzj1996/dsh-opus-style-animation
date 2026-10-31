@@ -22,7 +22,7 @@ async function renderWall(): Promise<HTMLElement> {
   roots.push(root);
   const startedAt = performance.now();
   await act(async () => {
-    root.render(React.createElement(CardWall));
+    root.render(React.createElement(CardWall, { onOpen: () => undefined }));
   });
   const elapsed = performance.now() - startedAt;
   // 基线只打印不断言（jsdom 无布局/绘制，远低于真浏览器；数字记进票里做参考）。
