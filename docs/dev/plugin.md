@@ -127,7 +127,8 @@ pnpm --dir plugin test        # 先构建（含生成数据），再 vitest run
 「资产文件 → TS 模块」的序列化，产出 `src/data/asset-index.generated.ts`（约 1.7 MB；构建产物，gitignore）。
 它不解析 md、不依赖素材包在场；新克隆只要有 `assets/` 就能构建。`DSC_ASSET_INDEX=<path>` 可指向别的索引文件。
 浏览器 bundle 因此从 #20 的 ~11 KB 涨到 ~1.48 MB——这是 341 份原文 + 公共函数内置的代价，运行期只
-`JSON.parse` 一次、不读盘、不联网。应用 A–G 代码样片时，草稿末尾会附上这份 `_公共函数.js` 全文（逐字）。
+`JSON.parse` 一次、不读盘、不联网。应用 A–G 代码样片时，草稿末尾会附上这份 `_公共函数.js` 全文（逐字），
+并把原文里「公共的小工具函数在同一文件夹的 _公共函数.js 里。」一句删掉、改由草稿说明已添加在下方。
 资产漂移用 `pnpm check:assets`（即 `node scripts/build-assets.mjs --check`）判（需要素材包在场）。
 
 seam：资产索引（`test/asset-index.test.ts` 四类真实样本 / `catalog-data.test.ts` 全量逐字节 + 公共函数逐字）、

@@ -94,7 +94,9 @@ GUI 路径等价：侧栏 **Plugins → Add plugin → 填本地绝对路径**�
 - **返回**：详情里点「← 返回卡片墙」回到卡片墙，并恢复进详情前的滚动位置。
 - **草稿**：composeDraft（纯函数）拼一行任务说明（含产物路径 animations/<时间戳>-<ID>-<名称>/index.html）
   + 主题（非空时一行）+ 风格原文（逐字）；代码样片（索引 hasSharedHelpers: true，25 张）再追加
-  _公共函数.js 全文，保证参考实现里的 rng / clamp / vgrad 可直接跑。块之间只留一个空行。
+  _公共函数.js 全文，保证参考实现里的 rng / clamp / vgrad 可直接跑。内联时会把原文里
+  「公共的小工具函数在同一文件夹的 _公共函数.js 里。」那句删掉（新会话里它已是错的），
+  改由草稿说明「公共函数已添加在下方」（用户 2026-10-31 冒烟后拍板）。块之间只留一个空行。
 - **应用**：uiWorkspace.startSession(undefined, { prompt, clearPreviousDraft: true })——在当前/最近工作区
   开新会话并把草稿填进输入框，**不自动发送**；成功后浮层关闭并出现轻提示「已带入草稿，可编辑后发送」。
   拿不到服务或同步失败时，详情里显示可读错误、浮层保持打开（不吞错）。
@@ -138,7 +140,7 @@ node scripts/verify-client-module.mjs dsh-style-cards
 - `overlay-state.test.ts` — 浮层开/关状态机（入口点按切换、关闭按钮 / 点遮罩 / ESC 关闭、关着时 ESC 无事发生、关掉还能再开）；
 - `client-bundle.test.ts` — 构建产物方言、`apply` 模拟宿主上下文、内置数据与「不读盘 / 不联网」；
 - `package-manifest.test.ts` — `dsh.bundle.patch` / `dsh.client` / 展示元数据 / 图标齐全；
-- `compose-draft.test.ts` — 草稿文本 golden：空/有主题、路径形状、原文逐字、代码样片内联公共函数、块间只留一个空行；
+- `compose-draft.test.ts` — 草稿文本 golden：空/有主题、路径形状、原文逐字、代码样片内联公共函数并删掉「同一文件夹」那句、块间只留一个空行；
 - `attribution.test.ts` — 三档许可署名（free-share-no-sell © 俯仰观照；MIT 的 L/V/X 各自版权人；逐条来源）；
 - `apply-session.test.ts` — 适配器断言 startSession(undefined, { prompt, clearPreviousDraft: true })，失败返回可读错误；
 - `panel.test.ts` — jsdom：点卡片进详情、返回恢复滚动位置、应用草稿含主题/公共函数、失败时错误留在详情里。

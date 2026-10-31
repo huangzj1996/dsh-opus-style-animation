@@ -8,6 +8,10 @@
  *   + hasSharedHelpers 时追加 _公共函数.js 全文（md 里「同一文件夹」的引用在用户工作区里没有落点，
  *     不内联的话 rng/clamp/vgrad 直接未定义——ADR-0002）
  *
+ * 内联时原文那句「公共的小工具函数在同一文件夹的 _公共函数.js 里。」要删掉——它在新会话里已是错的；
+ * 改为在草稿里说明公共函数已添加在下方（用户 2026-10-31 冒烟后拍板）。这一步只作用于代码样片，
+ * 其他卡片的原文仍然逐字保留。
+ *
  * 时间与公共函数文本都由调用方注入：测试可以 golden，生产由浮层传 new Date() 与内置常量。
  */
 import type { StyleAsset } from "../catalog/types";
@@ -20,6 +24,14 @@ export interface ComposeDraftOptions {
   readonly sharedHelpers: string;
   /** 产物路径里的时间戳；由调用方给，函数保持确定性。 */
   readonly now: Date;
+}
+
+/** A–G 代码样片原文里那句「公共函数在同一文件夹」；内联全文后草稿里要删掉。 */
+export const SHARED_HELPERS_SENTENCE = "公共的小工具函数在同一文件夹的 _公共函数.js 里。";
+
+/** 删掉原文里「公共函数在同一文件夹」那句（只该在确实内联了全文时调用）。 */
+export function stripSharedHelpersSentence(prompt: string): string {
+  return prompt.split(SHARED_HELPERS_SENTENCE).join("");
 }
 
 /** 时间戳格式：本地时间 YYYYMMDD-HHmmss（目录名里不用冒号与空格）。 */
@@ -83,10 +95,11 @@ export function composeDraft(style: DraftStyle, theme: string, options: ComposeD
     "按下面的风格提示词做一段代码动画，产物写到 " + draftOutputDir(style, options.now) + "index.html。",
   ];
   if (themeLine !== "") blocks.push("主题：" + themeLine);
-  blocks.push(style.prompt);
-  if (style.hasSharedHelpers && options.sharedHelpers !== "") {
+  const inlineHelpers = style.hasSharedHelpers && options.sharedHelpers !== "";
+  blocks.push(inlineHelpers ? stripSharedHelpersSentence(style.prompt) : style.prompt);
+  if (inlineHelpers) {
     blocks.push(
-      "参考实现用到的公共函数在 _公共函数.js 里（rng / clamp / vgrad 等）；请把下面的全文与 index.html 放在同一目录：",
+      "公共函数已添加在下方（_公共函数.js 全文，rng / clamp / vgrad 等都在里面）；请把它与 index.html 放在同一目录：",
     );
     blocks.push(options.sharedHelpers);
   }

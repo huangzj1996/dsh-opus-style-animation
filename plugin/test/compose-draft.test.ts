@@ -12,6 +12,9 @@ const byId = (id: string): StyleAsset => {
   return style;
 };
 const NOW = new Date(2026, 9, 31, 13, 15, 0); // 本地时间 2026-10-31 13:15:00
+// 内联公共函数后，原文里这句「在同一文件夹」是错的——用户 2026-10-31 拍板：删掉这句，
+// 在草稿末尾说明公共函数已经附在下方。这里用字面量当预期，不 import 被测函数。
+const HELPERS_SENTENCE = "公共的小工具函数在同一文件夹的 _公共函数.js 里。";
 
 describe("composeDraft", () => {
   it("有主题的代码样片：一行任务说明 + 主题 + 原文逐字 + 公共函数全文", () => {
@@ -22,8 +25,11 @@ describe("composeDraft", () => {
     expect(draft).toContain("animations/20261031-131500-A1-字雨/index.html");
     // 主题单独一行
     expect(draft).toContain("\n主题：新年倒计时\n");
-    // 原文逐字（不是摘录、不是重排）
-    expect(draft).toContain(a1.prompt);
+    // 原文删掉「同一文件夹的 _公共函数.js」那句后逐字保留（不是摘录、不是重排）
+    expect(draft).not.toContain(HELPERS_SENTENCE);
+    expect(draft).toContain(a1.prompt.split(HELPERS_SENTENCE).join(""));
+    // 末尾说明公共函数已添加在下方
+    expect(draft).toContain("公共函数已添加在下方");
     // 公共函数全文在末尾
     expect(draft).toContain("_公共函数.js");
     expect(draft.endsWith(SHARED_HELPERS)).toBe(true);
@@ -35,9 +41,23 @@ describe("composeDraft", () => {
     const a1 = byId("A1");
     const draft = composeDraft(a1, "   ", { sharedHelpers: SHARED_HELPERS, now: NOW });
     expect(draft).not.toContain("主题：");
-    expect(draft).toContain(a1.prompt);
+    expect(draft).toContain(a1.prompt.split(HELPERS_SENTENCE).join(""));
+    expect(draft).not.toContain(HELPERS_SENTENCE);
     expect(draft.endsWith(SHARED_HELPERS)).toBe(true);
     expect(draft.match(/\n{3,}/g) ?? []).toEqual([]);
+  });
+
+  it("代码样片：删掉原文「同一文件夹」那句；非代码样片的原文不动", () => {
+    const a1 = byId("A1");
+    expect(a1.prompt).toContain(HELPERS_SENTENCE);
+    const draft = composeDraft(a1, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+    expect(draft).not.toContain(HELPERS_SENTENCE);
+    expect(draft).toContain("公共函数已添加在下方");
+    expect(draft.endsWith(SHARED_HELPERS)).toBe(true);
+
+    const h10 = byId("H10");
+    const plain = composeDraft(h10, "", { sharedHelpers: SHARED_HELPERS, now: NOW });
+    expect(plain).toContain(h10.prompt);
   });
 
   it("路径形状：名称里的斜杠与空白压成连字符，空名兜底「未命名」", () => {

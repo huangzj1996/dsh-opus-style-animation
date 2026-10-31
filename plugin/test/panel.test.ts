@@ -11,6 +11,7 @@ import type { ApplyDraft } from "../src/client/apply-session";
 // 不测 React 内部状态与样式；真实会话创建不在这一层（适配器 seam + 手工冒烟覆盖）。
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
+const HELPERS_SENTENCE = "公共的小工具函数在同一文件夹的 _公共函数.js 里。";
 const byId = (id: string) => {
   const style = ASSET_INDEX.styles.find((item) => item.id === id);
   if (style === undefined) throw new Error("找不到卡片 " + id);
@@ -91,7 +92,7 @@ describe("卡片详情与返回", () => {
     body.scrollTop = 420;
 
     await click(container.querySelector('[data-card-id="L4"]'));
-    expect(container.querySelector(".dsc-detail-badge")?.textContent ?? container.textContent).toContain("L4");
+    expect(container.querySelector(".dsc-detail-badge")?.textContent).toContain("L4 · L Lemo-Opuscar");
     expect(container.querySelector('[data-license="MIT"]')).not.toBeNull();
     expect(container.querySelector(".dsc-license-copyright")?.textContent).toContain("LemoLab");
 
@@ -121,7 +122,8 @@ describe("卡片详情与返回", () => {
     const draft = drafts[0] as string;
     expect(draft).toContain("animations/20261031-131500-A1-字雨/index.html");
     expect(draft).toContain("主题：新年倒计时");
-    expect(draft).toContain(byId("A1").prompt);
+    expect(draft).toContain(byId("A1").prompt.split(HELPERS_SENTENCE).join(""));
+    expect(draft).not.toContain(HELPERS_SENTENCE);
     expect(draft.endsWith(SHARED_HELPERS)).toBe(true);
     expect(applied).toEqual(["已带入草稿，可编辑后发送"]);
     expect(container.querySelector(".dsc-detail-error")).toBeNull();
